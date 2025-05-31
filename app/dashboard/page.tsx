@@ -195,9 +195,9 @@ export default function Dashboard() {
                     <th className="text-left py-3 px-4 font-semibold text-gray-700">Type</th>
                     <th className="text-left py-3 px-4 font-semibold text-gray-700">Details</th>
                     <th className="text-left py-3 px-4 font-semibold text-gray-700">Date</th>
-                    <th className="text-left py-3 px-4 font-semibold text-gray-700">Status</th>
+                    {/* <th className="text-left py-3 px-4 font-semibold text-gray-700">Status</th>
                     <th className="text-left py-3 px-4 font-semibold text-gray-700">Score</th>
-                    <th className="text-left py-3 px-4 font-semibold text-gray-700">Questions</th>
+                    <th className="text-left py-3 px-4 font-semibold text-gray-700">Questions</th> */}
                   </tr>
                 </thead>
                 <tbody>
@@ -231,7 +231,7 @@ export default function Dashboard() {
                           </span>
                         </div>
                       </td>
-                      <td className="py-4 px-4">{getStatusBadge(interview.status)}</td>
+                      {/* <td className="py-4 px-4">{getStatusBadge(interview.status)}</td>
                       <td className="py-4 px-4">
                         {interview.feedback?.overallScore ? (
                           <span className="font-semibold text-gray-900">
@@ -243,7 +243,7 @@ export default function Dashboard() {
                       </td>
                       <td className="py-4 px-4">
                         <span className="text-gray-600">{interview._count.questions}</span>
-                      </td>
+                      </td> */}
                     </tr>
                   ))}
                 </tbody>

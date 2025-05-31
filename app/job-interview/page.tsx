@@ -430,191 +430,192 @@ export default function JobInterview() {
         </div>
 
         <div className="bg-white rounded-2xl shadow-xl p-8">
-          {/* Job Details Form */}
-          <div className="space-y-6">
-            <div>
-              <label htmlFor="jobTitle" className="block text-sm font-medium text-gray-700 mb-2">
-                Job Title *
-              </label>
-              <input
-                type="text"
-                id="jobTitle"
-                value={jobDetails.title}
-                onChange={(e) => setJobDetails({ ...jobDetails, title: e.target.value })}
-                placeholder="e.g. Software Engineer, Marketing Manager, Data Analyst"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="company" className="block text-sm font-medium text-gray-700 mb-2">
-                Company Name *
-              </label>
-              <input
-                type="text"
-                id="company"
-                value={jobDetails.company}
-                onChange={(e) => setJobDetails({ ...jobDetails, company: e.target.value })}
-                placeholder="e.g. Google, Microsoft, Apple"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="industry" className="block text-sm font-medium text-gray-700 mb-2">
-                Industry
-              </label>
-              <select
-                id="industry"
-                value={jobDetails.industry}
-                onChange={(e) => setJobDetails({ ...jobDetails, industry: e.target.value })}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-              >
-                <option value="">Select Industry</option>
-                <option value="technology">Technology</option>
-                <option value="finance">Finance</option>
-                <option value="healthcare">Healthcare</option>
-                <option value="marketing">Marketing</option>
-                <option value="education">Education</option>
-                <option value="other">Other</option>
-              </select>
-              <p className="text-sm text-gray-500 mt-1">
-                Selecting "Technology" will enable technical interview mode
-              </p>
-            </div>
-
-            <div>
-              <label htmlFor="jobDescription" className="block text-sm font-medium text-gray-700 mb-2">
-                Job Description (Optional)
-              </label>
-              <textarea
-                id="jobDescription"
-                rows={4}
-                value={jobDetails.description}
-                onChange={(e) => setJobDetails({ ...jobDetails, description: e.target.value })}
-                placeholder="Paste the job description here to get more targeted questions..."
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
-              />
-            </div>
-
-            {/* Resume Upload */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Upload Resume/CV (Optional)
-              </label>
-              <div
-                onClick={() => !isParsingResume && fileInputRef.current?.click()}
-                className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
-                  isParsingResume 
-                    ? 'border-purple-300 cursor-wait' 
-                    : 'border-gray-300 hover:border-purple-400 cursor-pointer'
-                }`}
-              >
+            {/* Job Details Form */}
+            <div className="space-y-6">
+                <div>
+                <label htmlFor="jobTitle" className="block text-sm font-medium text-gray-700 mb-2">
+                    Job Title *
+                </label>
                 <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept=".pdf,.doc,.docx"
-                  onChange={handleFileUpload}
-                  className="hidden"
-                  disabled={isParsingResume}
+                    type="text"
+                    id="jobTitle"
+                    value={jobDetails.title}
+                    onChange={(e) => setJobDetails({ ...jobDetails, title: e.target.value })}
+                    placeholder="e.g. Software Engineer, Marketing Manager, Data Analyst"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900 placeholder-gray-400"
                 />
-                
-                {isParsingResume ? (
-                  <div className="flex items-center justify-center space-x-2">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
-                    <div>
-                      <p className="text-lg font-medium text-gray-900">Analyzing Resume...</p>
-                      <p className="text-sm text-gray-500">Extracting skills and experience</p>
-                    </div>
-                  </div>
-                ) : resumeFile ? (
-                  <div className="flex items-center justify-center space-x-2">
-                    <FileText className="h-8 w-8 text-purple-600" />
-                    <div>
-                      <p className="text-lg font-medium text-gray-900">{resumeFile.name}</p>
-                      <p className="text-sm text-gray-500">
-                        {(resumeFile.size / 1024 / 1024).toFixed(2)} MB
-                      </p>
-                      {resumeData && (
-                        <p className="text-sm text-green-600 mt-1">
-                          ✓ Resume analyzed successfully
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                ) : (
-                  <div>
-                    <Upload className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-lg text-gray-600 mb-2">Click to upload your resume</p>
-                    <p className="text-sm text-gray-500">PDF or Word document (Max 10MB)</p>
-                  </div>
-                )}
-              </div>
-              
-              {/* Resume parsing error */}
-              {resumeParseError && (
-                <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-lg">
-                  <p className="text-sm text-red-600">⚠️ {resumeParseError}</p>
-                  <p className="text-xs text-red-500 mt-1">
-                    You can still proceed with the interview without resume analysis.
-                  </p>
                 </div>
-              )}
-              
-              {/* Resume analysis summary */}
-              {resumeData && !resumeParseError && (
-                <div className="mt-3 p-4 bg-green-50 border border-green-200 rounded-lg">
-                  <h4 className="text-sm font-medium text-green-800 mb-2">✓ Resume Analysis Complete</h4>
-                  <div className="text-xs text-green-700 space-y-1">
-                    {resumeData.skills.length > 0 && (
-                      <p>• Found {resumeData.skills.length} relevant skills</p>
-                    )}
-                    {resumeData.experience.length > 0 && (
-                      <p>• Detected {resumeData.experience.length} work experience entries</p>
-                    )}
-                    {resumeData.education.length > 0 && (
-                      <p>• Found {resumeData.education.length} education entries</p>
-                    )}
-                    <p className="text-green-600 font-medium">The AI interviewer will ask questions based on your resume!</p>
-                  </div>
-                </div>
-              )}
-              
-              {resumeFile && (
-                <div className="mt-2 flex items-center justify-between">
-                  <button
-                    onClick={() => {
-                      setResumeFile(null);
-                      setResumeData(null);
-                      setResumeParseError(null);
-                    }}
-                    className="text-sm text-red-600 hover:text-red-700"
-                  >
-                    Remove file
-                  </button>
-                  {resumeData && resumeData.skills.length > 0 && (
-                    <p className="text-xs text-gray-500">
-                      Key skills: {resumeData.skills.slice(0, 3).join(', ')}
-                      {resumeData.skills.length > 3 && ` +${resumeData.skills.length - 3} more`}
-                    </p>
-                  )}
-                </div>
-              )}
-            </div>
 
-            {/* Start Interview Button */}
-            <div className="pt-6">
-              <button
-                onClick={handleStartInterview}
-                disabled={!jobDetails.title || !jobDetails.company}
-                className="w-full flex items-center justify-center space-x-2 py-4 px-6 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-medium text-lg"
-              >
-                <Video className="h-6 w-6" />
-                <span>Start AI Video Interview</span>
-              </button>
+                <div>
+                <label htmlFor="company" className="block text-sm font-medium text-gray-700 mb-2">
+                    Company Name *
+                </label>
+                <input
+                    type="text"
+                    id="company"
+                    value={jobDetails.company}
+                    onChange={(e) => setJobDetails({ ...jobDetails, company: e.target.value })}
+                    placeholder="e.g. Google, Microsoft, Apple"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900 placeholder-gray-400"
+                />
+                </div>
+
+                <div>
+                <label htmlFor="industry" className="block text-sm font-medium text-gray-700 mb-2">
+                    Industry
+                </label>
+                <select
+                    id="industry"
+                    value={jobDetails.industry}
+                    onChange={(e) => setJobDetails({ ...jobDetails, industry: e.target.value })}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900"
+                >
+                    <option value="">Select Industry</option>
+                    <option value="technology">Technology</option>
+                    <option value="finance">Finance</option>
+                    <option value="healthcare">Healthcare</option>
+                    <option value="marketing">Marketing</option>
+                    <option value="education">Education</option>
+                    <option value="other">Other</option>
+                </select>
+                <p className="text-sm text-gray-500 mt-1">
+                    Selecting "Technology" will enable technical interview mode
+                </p>
+                </div>
+
+                <div>
+                <label htmlFor="jobDescription" className="block text-sm font-medium text-gray-700 mb-2">
+                    Job Description (Optional)
+                </label>
+                <textarea
+                    id="jobDescription"
+                    rows={4}
+                    value={jobDetails.description}
+                    onChange={(e) => setJobDetails({ ...jobDetails, description: e.target.value })}
+                    placeholder="Paste the job description here to get more targeted questions..."
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none text-gray-900 placeholder-gray-400"
+                />
+                </div>
+
+                {/* Resume Upload */}
+                <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Upload Resume/CV (Optional)
+                </label>
+                <div
+                    onClick={() => !isParsingResume && fileInputRef.current?.click()}
+                    className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
+                    isParsingResume 
+                        ? 'border-purple-300 cursor-wait' 
+                        : 'border-gray-300 hover:border-purple-400 cursor-pointer'
+                    }`}
+                >
+                    <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".pdf,.doc,.docx"
+                    onChange={handleFileUpload}
+                    className="hidden"
+                    disabled={isParsingResume}
+                    />
+
+                    {isParsingResume ? (
+                    <div className="flex items-center justify-center space-x-2">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+                        <div>
+                        <p className="text-lg font-medium text-gray-900">Analyzing Resume...</p>
+                        <p className="text-sm text-gray-500">Extracting skills and experience</p>
+                        </div>
+                    </div>
+                    ) : resumeFile ? (
+                    <div className="flex items-center justify-center space-x-2">
+                        <FileText className="h-8 w-8 text-purple-600" />
+                        <div>
+                        <p className="text-lg font-medium text-gray-900">{resumeFile.name}</p>
+                        <p className="text-sm text-gray-500">
+                            {(resumeFile.size / 1024 / 1024).toFixed(2)} MB
+                        </p>
+                        {resumeData && (
+                            <p className="text-sm text-green-600 mt-1">
+                            ✓ Resume analyzed successfully
+                            </p>
+                        )}
+                        </div>
+                    </div>
+                    ) : (
+                    <div>
+                        <Upload className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                        <p className="text-lg text-gray-600 mb-2">Click to upload your resume</p>
+                        <p className="text-sm text-gray-500">PDF or Word document (Max 10MB)</p>
+                    </div>
+                    )}
+                </div>
+
+                {/* Resume parsing error */}
+                {resumeParseError && (
+                    <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+                    <p className="text-sm text-red-600">⚠️ {resumeParseError}</p>
+                    <p className="text-xs text-red-500 mt-1">
+                        You can still proceed with the interview without resume analysis.
+                    </p>
+                    </div>
+                )}
+
+                {/* Resume analysis summary */}
+                {/* {resumeData && !resumeParseError && (
+                    <div className="mt-3 p-4 bg-green-50 border border-green-200 rounded-lg">
+                    <h4 className="text-sm font-medium text-green-800 mb-2">✓ Resume Analysis Complete</h4>
+                    <div className="text-xs text-green-700 space-y-1">
+                        {resumeData.skills.length > 0 && (
+                        <p>• Found {resumeData.skills.length} relevant skills</p>
+                        )}
+                        {resumeData.experience.length > 0 && (
+                        <p>• Detected {resumeData.experience.length} work experience entries</p>
+                        )}
+                        {resumeData.education.length > 0 && (
+                        <p>• Found {resumeData.education.length} education entries</p>
+                        )}
+                        <p className="text-green-600 font-medium">The AI interviewer will ask questions based on your resume!</p>
+                    </div>
+                    </div>
+                )}
+
+                {resumeFile && (
+                    <div className="mt-2 flex items-center justify-between">
+                    <button
+                        onClick={() => {
+                        setResumeFile(null);
+                        setResumeData(null);
+                        setResumeParseError(null);
+                        }}
+                        className="text-sm text-red-600 hover:text-red-700"
+                    >
+                        Remove file
+                    </button>
+                    {resumeData && resumeData.skills.length > 0 && (
+                        <p className="text-xs text-gray-500">
+                        Key skills: {resumeData.skills.slice(0, 3).join(', ')}
+                        {resumeData.skills.length > 3 && ` +${resumeData.skills.length - 3} more`}
+                        </p>
+                    )}
+                    </div>
+                )} */}
+                </div>
+
+                {/* Start Interview Button */}
+                <div className="pt-6">
+                <button
+                    onClick={handleStartInterview}
+                    disabled={!jobDetails.title || !jobDetails.company}
+                    className="w-full flex items-center justify-center space-x-2 py-4 px-6 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-medium text-lg"
+                >
+                    <Video className="h-6 w-6" />
+                    <span>Start AI Video Interview</span>
+                </button>
+                </div>
             </div>
-          </div>
         </div>
+
 
         {/* Features */}
         <div className="mt-12 grid md:grid-cols-3 gap-6">

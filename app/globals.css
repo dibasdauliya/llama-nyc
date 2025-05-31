@@ -32,6 +32,53 @@ body {
   line-height: 1.6;
 }
 
+/* Dark, readable input text */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="tel"],
+input[type="url"],
+textarea,
+select {
+  color: #1f2937 !important; /* gray-800 - much darker text */
+  font-weight: 500 !important; /* slightly bolder for better readability */
+}
+
+/* Much darker placeholder text */
+::placeholder {
+  color: #4b5563 !important; /* gray-600 - darker than before */
+  opacity: 1 !important;
+  font-weight: 400 !important;
+}
+
+/* Firefox specific placeholder styling */
+::-moz-placeholder {
+  color: #4b5563 !important; /* gray-600 */
+  opacity: 1 !important;
+  font-weight: 400 !important;
+}
+
+/* WebKit browsers (Chrome, Safari, Edge) */
+::-webkit-input-placeholder {
+  color: #4b5563 !important; /* gray-600 */
+  opacity: 1 !important;
+  font-weight: 400 !important;
+}
+
+/* Microsoft Edge */
+::-ms-input-placeholder {
+  color: #4b5563 !important; /* gray-600 */
+  opacity: 1 !important;
+  font-weight: 400 !important;
+}
+
+/* Select dropdown options */
+option {
+  color: #1f2937 !important; /* gray-800 */
+  background: white !important;
+}
+
 /* Custom scrollbar styling */
 ::-webkit-scrollbar {
   width: 8px;

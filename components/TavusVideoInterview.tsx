@@ -34,7 +34,6 @@ export default function TavusVideoInterview({
   const [isVideoOn, setIsVideoOn] = useState(true);
   const [isAudioOn, setIsAudioOn] = useState(true);
   const [showControls, setShowControls] = useState(true);
-  const [currentQuestion, setCurrentQuestion] = useState<string>('');
   
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
@@ -45,7 +44,8 @@ export default function TavusVideoInterview({
     error: tavusError,
     startInterview: startTavusInterview,
     endInterview: endTavusInterview,
-    resetInterview
+    resetInterview,
+    markConversationReady
   } = useTavusInterview({
     apiKey,
     interviewType,
@@ -135,7 +135,21 @@ export default function TavusVideoInterview({
       
       // End database interview session if active
       if (interviewSession.isActive) {
-        const completedInterview = await endInterviewSession('COMPLETED');
+        // You can collect conversation data here if Tavus provides it
+        const conversationData = {
+          // This would come from Tavus conversation analysis
+          // For now, we'll use placeholder data
+          overallScore: undefined,
+          communicationScore: undefined,
+          technicalScore: undefined,
+          confidenceScore: undefined,
+          strengths: [],
+          improvements: [],
+          detailedFeedback: undefined,
+          aiAnalysis: undefined
+        };
+
+        const completedInterview = await endInterviewSession('COMPLETED', conversationData);
         onInterviewEnd?.(completedInterview);
       } else {
         onInterviewEnd?.();
@@ -161,39 +175,40 @@ export default function TavusVideoInterview({
       
       const { type, data } = event.data;
       
+      // Mark conversation as ready on first data received
+      if (tavusLoading) {
+        markConversationReady();
+      }
+      
       switch (type) {
         case 'conversation_question':
           // Add question to our session tracking
           if (data.question && interviewSession.isActive) {
-            setCurrentQuestion(data.question);
             addQuestion({
               question: data.question,
-              askedAt: new Date()
+              askedAt: new Date(),
             });
           }
           break;
           
         case 'conversation_answer':
           // Update the last question with the answer
-          if (data.answer && interviewSession.isActive && interviewSession.questions.length > 0) {
-            const lastQuestionIndex = interviewSession.questions.length - 1;
-            // The AI interviewer will handle all analysis and rejection logic automatically
+          if (data.answer && interviewSession.isActive) {
+            // Update the most recent question with the answer
+            // This is a simplified approach - you might want more sophisticated tracking
           }
           break;
           
         case 'conversation_ended':
-          // Conversation ended by AI interviewer (could be rejection or natural end)
+          // Conversation ended from Tavus side
           handleEndInterview();
           break;
-          
-        default:
-          console.log('Unhandled Tavus event:', type, data);
       }
     };
 
     window.addEventListener('message', handleMessage);
     return () => window.removeEventListener('message', handleMessage);
-  }, [interviewSession, addQuestion]);
+  }, [interviewSession.isActive, addQuestion, tavusLoading, markConversationReady]);
 
   const toggleMute = () => {
     setIsMuted(!isMuted);

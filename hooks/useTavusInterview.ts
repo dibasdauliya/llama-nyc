@@ -104,7 +104,7 @@ When rejecting, clearly state: "I'm sorry, but based on your responses, you do n
               return {
                 "persona_name": "F1 Visa Officer",
                 "default_replica_id": "r9d30b0e55ac",
-                "system_prompt": "You are an experienced F1 Visa Officer conducting a student visa interview. You are professional, thorough, but decisive. Ask questions to assess the candidate's eligibility for an F1 student visa, including their academic intentions, financial capability, English proficiency, and ties to their home country. REJECT IMMEDIATELY if they cannot demonstrate: 1) Acceptance to a legitimate US educational institution, 2) Sufficient financial resources, 3) Strong ties to home country, 4) Genuine academic intent. Do not continue with follow-up questions if basic criteria are not met.",
+                "system_prompt": "You are an experienced F1 Visa Officer conducting a student visa interview. You are professional, thorough, but decisive. Ask questions to assess the candidate's eligibility for an F1 student visa, including their academic intentions, financial capability, English proficiency, and ties to their home country. REJECT IMMEDIATELY (DON'T ASK AGAIN) if they cannot demonstrate: 1) Acceptance to a legitimate US educational institution, 2) Sufficient financial resources, 3) Strong ties to home country, 4) Genuine academic intent. Do not continue with follow-up questions if basic criteria are not met.",
                 "context": customizedPrompt,
                 "layers": {
                   "perception": {
@@ -281,7 +281,6 @@ When rejecting, clearly state: "I'm sorry, but based on your responses, you do n
         conversationId: conversation.conversation_id,
         conversationUrl: conversation.conversation_url,
         isConnected: true,
-        isLoading: false,
       }));
 
       return conversation;
@@ -331,6 +330,11 @@ When rejecting, clearly state: "I'm sorry, but based on your responses, you do n
     }
   }, [state.conversationId]);
 
+  // Mark conversation as ready (call this when you get first data)
+  const markConversationReady = useCallback(() => {
+    setState(prev => ({ ...prev, isLoading: false }));
+  }, []);
+
   // Reset the interview state
   const resetInterview = useCallback(() => {
     setState({
@@ -359,5 +363,6 @@ When rejecting, clearly state: "I'm sorry, but based on your responses, you do n
     resetInterview,
     getConversationStatus,
     setupPersona,
+    markConversationReady,
   };
 } 

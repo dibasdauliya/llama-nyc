@@ -1,36 +1,77 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Gmail Interface with AI Summarization
+
+A modern Gmail-like interface that connects to your Gmail account and provides AI-powered email summarization.
+
+## Features
+
+- **Gmail Integration**: View your inbox and sent emails directly in the app
+- **AI Email Summarization**: Click to generate concise summaries of your emails using Llama AI
+- **Modern UI**: Clean, responsive interface inspired by Gmail's design
+- **Compose Emails**: Write and send new emails directly from the app
+- **Authentication**: Secure OAuth2 authentication with Google
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
 
+- Node.js 18+ and npm
+- A Google account with Gmail
+- A Llama API key (for AI summarization)
+
+### Installation
+
+1. Clone the repository
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone <repository-url>
+cd llama-nyc
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. Install dependencies
+```bash
+npm install
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+3. Configure environment variables
+Create a `.env.local` file with the following:
+```
+GOOGLE_CLIENT_ID=your_google_client_id
+GOOGLE_CLIENT_SECRET=your_google_client_secret
+GOOGLE_REDIRECT_URI=http://localhost:3000/api/auth/callback/google
+NEXTAUTH_URL=http://localhost:3000
+NEXTAUTH_SECRET=your_nextauth_secret
+LLAMA_API_KEY=your_llama_api_key
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+4. Run the development server
+```bash
+npm run dev
+```
 
-## Learn More
+5. Open [http://localhost:3000/emails](http://localhost:3000/emails) in your browser
 
-To learn more about Next.js, take a look at the following resources:
+## Setup Guide
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+For detailed setup instructions, see:
+- [Gmail API Authentication Setup](app/emails/AUTH-SETUP.md)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## How to Use
 
-## Deploy on Vercel
+1. **View Emails**: Navigate between Inbox and Sent emails using the sidebar
+2. **Read Emails**: Click on an email to view its full content
+3. **AI Summarization**: In the email detail view, click "AI Summarize" to generate a concise summary
+4. **Compose Email**: Click the "Compose" button to write a new email
+5. **Sign Out**: Click the sign-out icon in the header to log out
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Technologies Used
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Next.js
+- React
+- TypeScript
+- NextAuth.js
+- Gmail API
+- Llama AI API (via llama-api-client)
+- Tailwind CSS
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.

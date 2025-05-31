@@ -60,6 +60,36 @@ NEXTAUTH_SECRET=your_nextauth_secret_here
 4. When prompted, grant permissions to access Gmail data
 5. You should now see your emails displayed in the interface
 
+## Additional Configuration for AI Summarization
+
+To use the AI email summarization feature, you need to:
+
+1. Get a Llama API key from https://www.llama.com
+2. Add it to your server-side environment variables in `.env.local`:
+
+```
+LLAMA_API_KEY=your_llama_api_key_here
+```
+
+Note: We're using a server-side proxy to keep your API key secure. The API key is never exposed to the client browser.
+
+### How the Llama API Integration Works
+
+This application uses the official `llama-api-client` library to interact with the Llama API. The workflow is:
+
+1. User clicks the "AI Summarize" button on an email
+2. The frontend sends the email content to our server-side proxy at `/api/llama-proxy`
+3. The proxy uses the server-side API key to make a secure request to the Llama API
+4. The summary is streamed back to the client in real-time
+
+For streaming summaries, we use Server-Sent Events (SSE) to display the summary as it's being generated, character by character.
+
+If you encounter any issues with the Llama API:
+- Verify your API key is correct
+- Check that you've added it to `.env.local` as `LLAMA_API_KEY`
+- Make sure your API key has the proper permissions for text generation
+- Restart your development server after making changes to environment variables
+
 ## Common Issues and Solutions
 
 ### 1. "Invalid Credentials" or "Access Token Expired"

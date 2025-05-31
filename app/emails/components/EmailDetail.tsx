@@ -3,6 +3,7 @@
 import { ArrowLeft, Star, StarOff, Reply, Forward, Trash } from 'lucide-react';
 import { formatDetailDate } from '../utils/formatDate';
 import { Email } from '../hooks/useGmailEmails';
+import EmailSummaryStreaming from './EmailSummaryStreaming';
 
 interface EmailDetailProps {
   email: Email;
@@ -11,6 +12,22 @@ interface EmailDetailProps {
 
 export default function EmailDetail({ email, onBack }: EmailDetailProps) {
   if (!email) return null;
+  
+  // Extract plain text from HTML for summarization
+  const getPlainText = (html: string) => {
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = html;
+    return tempDiv.textContent || tempDiv.innerText || '';
+  };
+  
+  const emailContent = `
+Subject: ${email.subject}
+From: ${email.from}
+To: ${email.to}
+Date: ${formatDetailDate(email.date)}
+
+${getPlainText(email.body)}
+`;
   
   return (
     <div className="flex-1 overflow-auto bg-white">
@@ -60,6 +77,8 @@ export default function EmailDetail({ email, onBack }: EmailDetailProps) {
             </div>
           </div>
         </div>
+        
+        <EmailSummaryStreaming emailContent={emailContent} />
         
         <div className="py-4 whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: email.body }} />
         

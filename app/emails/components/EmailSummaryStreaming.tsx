@@ -300,8 +300,8 @@ export default function EmailSummaryStreaming({ emailContent }: EmailSummaryStre
                 AI Summary {isLoading && <Loader2 className="h-4 w-4 inline-block ml-2 animate-spin" />}
               </h3>
               <div className="whitespace-pre-wrap">
-                <ReactMarkdown >
-                  {summary}
+                <ReactMarkdown>
+                  {typeof summary === 'string' ? summary : ''}
                 </ReactMarkdown>
               </div>
             </div>

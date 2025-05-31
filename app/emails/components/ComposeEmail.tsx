@@ -1,123 +1,138 @@
 'use client';
 
-import { useState } from 'react';
-import { X } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { X, Minimize2, Maximize2 } from 'lucide-react';
+import AiReplyGenerator from './AiReplyGenerator';
 
 interface ComposeEmailProps {
   onClose: () => void;
+  initialTo?: string;
+  initialSubject?: string;
+  initialBody?: string;
+  replyTo?: string;
+  replySubject?: string;
+  replyBody?: string;
+  isReply?: boolean;
 }
 
-export default function ComposeEmail({ onClose }: ComposeEmailProps) {
-  const [to, setTo] = useState('');
-  const [subject, setSubject] = useState('');
-  const [body, setBody] = useState('');
-  const [isSending, setIsSending] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
+export default function ComposeEmail({
+  onClose,
+  initialTo = '',
+  initialSubject = '',
+  initialBody = '',
+  replyTo = '',
+  replySubject = '',
+  replyBody = '',
+  isReply = false
+}: ComposeEmailProps) {
+  const [to, setTo] = useState(initialTo);
+  const [subject, setSubject] = useState(isReply ? `Re: ${replySubject}` : initialSubject);
+  const [body, setBody] = useState(initialBody);
+  const [isMinimized, setIsMinimized] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    try {
-      setIsSending(true);
-      setError(null);
-      
-      const response = await fetch('/api/gmail/send', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ to, subject, body }),
-      });
-      
-      const data = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to send email');
-      }
-      
-      setSuccess(true);
-      
-      // Close the compose window after 2 seconds
-      setTimeout(() => {
-        onClose();
-      }, 2000);
-      
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to send email');
-      console.error('Error sending email:', err);
-    } finally {
-      setIsSending(false);
+  useEffect(() => {
+    if (isReply && replyBody) {
+      setBody(`\n\n------ Original Message ------\nFrom: ${replyTo}\nSubject: ${replySubject}\n\n${replyBody}`);
     }
+  }, [isReply, replyTo, replySubject, replyBody]);
+
+  const handleSend = () => {
+    // Here you would implement the email sending logic
+    console.log('Sending email:', { to, subject, body });
+    onClose();
   };
 
+  const handleInsertReply = (reply: string) => {
+    setBody(reply + body);
+  };
+
+  if (isMinimized) {
+    return (
+      <div className="fixed bottom-0 right-4 w-80 bg-white border border-gray-200 rounded-t-lg shadow-lg z-50">
+        <div className="flex justify-between items-center p-3 bg-gray-100 border-b cursor-pointer" onClick={() => setIsMinimized(false)}>
+          <h3 className="text-sm font-medium truncate">
+            {subject || 'New Message'}
+          </h3>
+          <div className="flex items-center space-x-2">
+            <button onClick={(e) => {
+              e.stopPropagation();
+              setIsMinimized(false);
+            }}>
+              <Maximize2 className="h-4 w-4 text-gray-500 hover:text-gray-700" />
+            </button>
+            <button onClick={(e) => {
+              e.stopPropagation();
+              onClose();
+            }}>
+              <X className="h-4 w-4 text-gray-500 hover:text-gray-700" />
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="fixed bottom-0 right-10 w-[500px] bg-white shadow-xl rounded-t-lg flex flex-col">
-      <div className="bg-gray-800 text-white px-4 py-2 flex justify-between items-center rounded-t-lg">
-        <h2 className="font-medium">New Message</h2>
-        <button 
-          onClick={onClose}
-          className="text-gray-300 hover:text-white"
-        >
-          <X className="h-5 w-5" />
-        </button>
+    <div className="fixed bottom-0 right-4 w-[600px] bg-white border border-gray-200 rounded-t-lg shadow-lg z-50">
+      <div className="flex justify-between items-center p-3 bg-gray-100 border-b">
+        <h3 className="text-sm font-medium">
+          {isReply ? `Reply to: ${replySubject}` : 'New Message'}
+        </h3>
+        <div className="flex items-center space-x-2">
+          <button onClick={() => setIsMinimized(true)}>
+            <Minimize2 className="h-4 w-4 text-gray-500 hover:text-gray-700" />
+          </button>
+          <button onClick={onClose}>
+            <X className="h-4 w-4 text-gray-500 hover:text-gray-700" />
+          </button>
+        </div>
       </div>
       
-      <form onSubmit={handleSubmit} className="flex-1 flex flex-col p-4">
-        <div className="mb-3">
-          <input
-            type="email"
-            placeholder="To"
-            value={to}
-            onChange={(e) => setTo(e.target.value)}
-            className="w-full px-2 py-1 border-b border-gray-300 focus:outline-none focus:border-blue-500"
-            required
-          />
-        </div>
-        
-        <div className="mb-3">
+      <div className="p-4">
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-1">To:</label>
           <input
             type="text"
-            placeholder="Subject"
+            value={to}
+            onChange={(e) => setTo(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+          />
+        </div>
+        
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-1">Subject:</label>
+          <input
+            type="text"
             value={subject}
             onChange={(e) => setSubject(e.target.value)}
-            className="w-full px-2 py-1 border-b border-gray-300 focus:outline-none focus:border-blue-500"
-            required
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
           />
         </div>
+
+        {isReply && replyBody && (
+          <AiReplyGenerator 
+            originalEmail={replyBody} 
+            onInsertReply={handleInsertReply} 
+          />
+        )}
         
-        <div className="flex-1 mb-4">
+        <div className="mb-4">
           <textarea
-            placeholder="Compose email..."
             value={body}
             onChange={(e) => setBody(e.target.value)}
-            className="w-full h-64 px-2 py-1 focus:outline-none resize-none"
-            required
+            className="w-full h-64 px-3 py-2 border border-gray-300 rounded-md resize-none focus:outline-none focus:ring-1 focus:ring-blue-500"
           />
         </div>
-        
-        {error && (
-          <div className="mb-3 text-red-500 text-sm">
-            {error}
-          </div>
-        )}
-        
-        {success && (
-          <div className="mb-3 text-green-500 text-sm">
-            Email sent successfully!
-          </div>
-        )}
         
         <div className="flex justify-between items-center">
           <button
-            type="submit"
-            disabled={isSending}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md font-medium disabled:opacity-50"
+            onClick={handleSend}
+            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
           >
-            {isSending ? 'Sending...' : 'Send'}
+            Send
           </button>
         </div>
-      </form>
+      </div>
     </div>
   );
 } 

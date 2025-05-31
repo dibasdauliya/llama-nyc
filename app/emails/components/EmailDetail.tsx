@@ -1,9 +1,11 @@
 'use client';
 
+import { useState } from 'react';
 import { ArrowLeft, Star, StarOff, Reply, Forward, Trash } from 'lucide-react';
 import { formatDetailDate } from '../utils/formatDate';
 import { Email } from '../hooks/useGmailEmails';
 import EmailSummaryStreaming from './EmailSummaryStreaming';
+import ComposeEmail from './ComposeEmail';
 
 interface EmailDetailProps {
   email: Email;
@@ -11,6 +13,8 @@ interface EmailDetailProps {
 }
 
 export default function EmailDetail({ email, onBack }: EmailDetailProps) {
+  const [isReplying, setIsReplying] = useState(false);
+  
   if (!email) return null;
   
   // Extract plain text from HTML for summarization
@@ -28,6 +32,14 @@ Date: ${formatDetailDate(email.date)}
 
 ${getPlainText(email.body)}
 `;
+
+  const handleReply = () => {
+    setIsReplying(true);
+  };
+  
+  const handleCloseReply = () => {
+    setIsReplying(false);
+  };
   
   return (
     <div className="flex-1 overflow-auto bg-white">
@@ -83,7 +95,10 @@ ${getPlainText(email.body)}
         <div className="py-4 whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: email.body }} />
         
         <div className="border-t border-gray-200 pt-4 mt-4 flex space-x-2">
-          <button className="px-4 py-2 border border-gray-300 rounded text-gray-700 hover:bg-gray-50 flex items-center">
+          <button 
+            onClick={handleReply}
+            className="px-4 py-2 border border-gray-300 rounded text-gray-700 hover:bg-gray-50 flex items-center"
+          >
             <Reply className="h-4 w-4 mr-2" />
             Reply
           </button>
@@ -93,6 +108,17 @@ ${getPlainText(email.body)}
           </button>
         </div>
       </div>
+      
+      {isReplying && (
+        <ComposeEmail 
+          onClose={handleCloseReply}
+          initialTo={email.from}
+          replyTo={email.from}
+          replySubject={email.subject}
+          replyBody={getPlainText(email.body)}
+          isReply={true}
+        />
+      )}
     </div>
   );
 } 

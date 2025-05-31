@@ -258,9 +258,63 @@ export async function POST(request: NextRequest) {
       
       console.log('Completion received:', 
         completion?.completion_message ? 'Content available' : 'No content available');
+      console.log('Completion response structure:', JSON.stringify(completion).substring(0, 500));
       
-      if (!completion || !completion.completion_message || !completion.completion_message.content) {
-        console.error('Received empty completion from API:', JSON.stringify(completion));
+      // Check different response formats
+      let responseToReturn = completion;
+      
+      // If the completion doesn't have the expected format, create a compatible format
+      if (completion && !completion.completion_message) {
+        // Treat the response as any to handle various formats
+        const anyCompletion = completion as any;
+        
+        // Check if it has a choices array (OpenAI format)
+        if (anyCompletion.choices && 
+            Array.isArray(anyCompletion.choices) && 
+            anyCompletion.choices.length > 0 && 
+            anyCompletion.choices[0]?.message) {
+          const content = anyCompletion.choices[0].message.content || '';
+          responseToReturn = {
+            ...anyCompletion,
+            completion_message: {
+              role: 'assistant',
+              content
+            }
+          };
+        } 
+        // If it has content directly
+        else if (anyCompletion.content && typeof anyCompletion.content === 'string') {
+          responseToReturn = {
+            ...anyCompletion,
+            completion_message: {
+              role: 'assistant',
+              content: anyCompletion.content
+            }
+          };
+        }
+      }
+      
+      // Check if we have any meaningful content
+      const anyResponse = responseToReturn as any;
+      
+      // Extract text content from completion_message
+      let hasContent = false;
+      if (anyResponse?.completion_message?.content) {
+        // Handle both string content and object content with text field
+        if (typeof anyResponse.completion_message.content === 'string') {
+          hasContent = Boolean(anyResponse.completion_message.content);
+        } else if (typeof anyResponse.completion_message.content === 'object' && anyResponse.completion_message.content?.text) {
+          // Convert object content to string content for consistency
+          anyResponse.completion_message.content = anyResponse.completion_message.content.text;
+          hasContent = Boolean(anyResponse.completion_message.content);
+        }
+      }
+      
+      // Check other formats
+      const hasChoicesContent = anyResponse?.choices?.[0]?.message?.content;
+      
+      if (!responseToReturn || (!hasContent && !hasChoicesContent)) {
+        console.error('Received empty completion from API:', JSON.stringify(responseToReturn));
         return NextResponse.json(
           { 
             error: 'Empty response', 
@@ -270,7 +324,7 @@ export async function POST(request: NextRequest) {
         );
       }
       
-      return NextResponse.json(completion);
+      return NextResponse.json(responseToReturn);
     } catch (error) {
       console.error('Error with Llama API:', error);
       return NextResponse.json(

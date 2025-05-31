@@ -1,11 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { MessageSquare, Briefcase, GraduationCap, ArrowRight, Sparkles, Video, Users, Bot } from "lucide-react";
+import { MessageSquare, Briefcase, GraduationCap, ArrowRight, Sparkles, Video, Users, Bot, LogIn, UserPlus } from "lucide-react";
 import Link from "next/link";
+import { useSession } from "next-auth/react";
 
 export default function Home() {
   const [hoveredCard, setHoveredCard] = useState<string | null>(null);
+  const { data: session } = useSession();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
@@ -21,9 +23,34 @@ export default function Home() {
               <p className="text-sm text-gray-600">Powered by Tavus AI</p>
             </div>
           </div>
-          <div className="flex items-center space-x-2 text-sm text-gray-600">
-            <Bot className="h-4 w-4" />
-            <span>Realistic AI Avatars</span>
+          
+          {/* Auth Buttons */}
+          <div className="flex items-center space-x-4">
+            {session ? (
+              <Link 
+                href="/dashboard" 
+                className="px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200 font-medium"
+              >
+                Go to Dashboard
+              </Link>
+            ) : (
+              <>
+                <Link 
+                  href="/auth/signin" 
+                  className="flex items-center space-x-2 px-4 py-2 text-gray-700 hover:text-gray-900 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  <LogIn className="h-4 w-4" />
+                  <span>Sign In</span>
+                </Link>
+                <Link 
+                  href="/auth/signup" 
+                  className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200 font-medium"
+                >
+                  <UserPlus className="h-4 w-4" />
+                  <span>Get Started</span>
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </header>

@@ -1,20 +1,13 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Inter } from "next/font/google";
 import "./globals.css";
+import SessionProvider from "@/components/SessionProvider";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "AI Interviewer - VISA & Job Interview Practice",
-  description: "Practice your VISA and job interviews with AI-powered mock interviews",
+  title: "AI Video Interviewer - Practice Interviews with AI",
+  description: "Master your interview skills with AI-powered video interviews. Practice VISA interviews and job interviews with realistic AI avatars.",
 };
 
 export default function RootLayout({
@@ -24,10 +17,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        {children}
+      <body className={inter.className}>
+        <SessionProvider>
+          {children}
+        </SessionProvider>
       </body>
     </html>
   );

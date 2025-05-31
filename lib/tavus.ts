@@ -151,7 +151,7 @@ class TavusClient {
         persona_id: personaId,
         callback_url: callbackUrl,
         properties: {
-          max_call_duration: 1800, // 30 minutes
+          max_call_duration: 60*6, // 6 minutes
           participant_left_timeout: 60,
           participant_absent_timeout: 300,
           enable_recording: false,

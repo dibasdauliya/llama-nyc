@@ -182,7 +182,7 @@ class TavusClient {
 
   // End a conversation
   async endConversation(conversationId: string): Promise<void> {
-    await this.makeRequest(`/conversations/${conversationId}`, {
+    await this.makeRequest(`/conversations/${conversationId}/end`, {
       method: 'POST',
     });
   }

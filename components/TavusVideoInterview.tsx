@@ -2,7 +2,9 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useTavusInterview } from '../hooks/useTavusInterview';
+import { useInterviewSession } from '../hooks/useInterviewSession';
 import { Video, VideoOff, Mic, MicOff, Phone, PhoneOff, Volume2, VolumeX, Settings } from 'lucide-react';
+import { ResumeData } from '../lib/resumeParser';
 
 interface TavusVideoInterviewProps {
   apiKey: string;
@@ -14,8 +16,9 @@ interface TavusVideoInterviewProps {
     description?: string;
   };
   visaType?: string;
-  onInterviewEnd?: () => void;
-  onInterviewStart?: () => void;
+  resumeData?: ResumeData | null;
+  onInterviewEnd?: (interviewData?: any) => void;
+  onInterviewStart?: (interviewData?: any) => void;
 }
 
 export default function TavusVideoInterview({
@@ -23,6 +26,7 @@ export default function TavusVideoInterview({
   interviewType,
   jobDetails,
   visaType,
+  resumeData,
   onInterviewEnd,
   onInterviewStart
 }: TavusVideoInterviewProps) {
@@ -30,23 +34,39 @@ export default function TavusVideoInterview({
   const [isVideoOn, setIsVideoOn] = useState(true);
   const [isAudioOn, setIsAudioOn] = useState(true);
   const [showControls, setShowControls] = useState(true);
+  const [currentQuestion, setCurrentQuestion] = useState<string>('');
   
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
   const {
-    isLoading,
+    isLoading: tavusLoading,
     isConnected,
     conversationUrl,
-    error,
-    startInterview,
-    endInterview,
+    error: tavusError,
+    startInterview: startTavusInterview,
+    endInterview: endTavusInterview,
     resetInterview
   } = useTavusInterview({
     apiKey,
     interviewType,
     jobDetails,
-    visaType
+    visaType,
+    resumeData
   });
+
+  const {
+    interviewSession,
+    isLoading: sessionLoading,
+    error: sessionError,
+    startInterview: startInterviewSession,
+    endInterview: endInterviewSession,
+    addQuestion,
+    getSessionDuration,
+    resetSession
+  } = useInterviewSession();
+
+  const isLoading = tavusLoading || sessionLoading;
+  const error = tavusError || sessionError;
 
   // Auto-hide controls after 3 seconds of no mouse movement
   useEffect(() => {
@@ -71,8 +91,38 @@ export default function TavusVideoInterview({
 
   const handleStartInterview = async () => {
     try {
-      await startInterview();
-      onInterviewStart?.();
+      // Start Tavus conversation
+      const conversation = await startTavusInterview();
+      
+      // Map interview type to database enum
+      const getInterviewType = () => {
+        if (interviewType === 'visa') {
+          if (visaType === 'F-1') return 'VISA_F1';
+          if (visaType === 'B-2') return 'VISA_B2';
+          if (visaType === 'H-1B') return 'VISA_H1B';
+          return 'VISA_F1'; // default
+        }
+        if (interviewType === 'technical') return 'JOB_TECHNICAL';
+        return 'JOB_HR'; // default for job interviews
+      };
+
+      // Start database interview session
+      const interviewData = {
+        type: getInterviewType() as any,
+        jobTitle: jobDetails?.title,
+        company: jobDetails?.company,
+        industry: jobDetails?.industry,
+        jobDescription: jobDetails?.description,
+        visaType: visaType,
+      };
+
+      const dbInterview = await startInterviewSession(
+        interviewData,
+        conversation.conversation_id,
+        '' // Use empty string as persona ID will be managed by Tavus hook
+      );
+
+      onInterviewStart?.(dbInterview);
     } catch (error) {
       console.error('Failed to start interview:', error);
     }
@@ -80,12 +130,70 @@ export default function TavusVideoInterview({
 
   const handleEndInterview = async () => {
     try {
-      await endInterview();
-      onInterviewEnd?.();
+      // End Tavus conversation first
+      await endTavusInterview();
+      
+      // End database interview session if active
+      if (interviewSession.isActive) {
+        const completedInterview = await endInterviewSession('COMPLETED');
+        onInterviewEnd?.(completedInterview);
+      } else {
+        onInterviewEnd?.();
+      }
     } catch (error) {
       console.error('Failed to end interview:', error);
+      // Try to end the session even if there was an error
+      try {
+        if (interviewSession.isActive) {
+          await endInterviewSession('FAILED');
+        }
+      } catch (sessionError) {
+        console.error('Failed to end interview session:', sessionError);
+      }
+      onInterviewEnd?.();
     }
   };
+
+  // Listen for conversation events from Tavus iframe
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      if (event.origin !== 'https://tavusapi.com') return;
+      
+      const { type, data } = event.data;
+      
+      switch (type) {
+        case 'conversation_question':
+          // Add question to our session tracking
+          if (data.question && interviewSession.isActive) {
+            setCurrentQuestion(data.question);
+            addQuestion({
+              question: data.question,
+              askedAt: new Date()
+            });
+          }
+          break;
+          
+        case 'conversation_answer':
+          // Update the last question with the answer
+          if (data.answer && interviewSession.isActive && interviewSession.questions.length > 0) {
+            const lastQuestionIndex = interviewSession.questions.length - 1;
+            // The AI interviewer will handle all analysis and rejection logic automatically
+          }
+          break;
+          
+        case 'conversation_ended':
+          // Conversation ended by AI interviewer (could be rejection or natural end)
+          handleEndInterview();
+          break;
+          
+        default:
+          console.log('Unhandled Tavus event:', type, data);
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, [interviewSession, addQuestion]);
 
   const toggleMute = () => {
     setIsMuted(!isMuted);
@@ -117,7 +225,10 @@ export default function TavusVideoInterview({
           <h3 className="text-lg font-semibold mb-2">Interview Setup Error</h3>
           <p className="text-sm mb-4">{error}</p>
           <button
-            onClick={resetInterview}
+            onClick={() => {
+              resetInterview();
+              resetSession();
+            }}
             className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
           >
             Try Again

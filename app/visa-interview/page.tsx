@@ -80,8 +80,13 @@ export default function VisaInterview() {
     setIsInterviewStarted(true);
   };
 
-  const handleInterviewEnd = () => {
+  const handleInterviewEnd = (interviewData?: any) => {
+    console.log('Interview completed and saved:', interviewData);
     setIsInterviewStarted(false);
+  };
+
+  const handleInterviewStart = (interviewData?: any) => {
+    console.log('Interview started and saved to database:', interviewData);
   };
 
   const handleBackToSelection = () => {
@@ -186,11 +191,14 @@ export default function VisaInterview() {
                 interviewType="visa"
                 visaType={selectedVisa.name}
                 onInterviewEnd={handleInterviewEnd}
+                onInterviewStart={handleInterviewStart}
               />
             </div>
 
             {/* Information Sidebar */}
             <div className="space-y-6">
+
+
               {/* Interview Focus Areas */}
               <div className="bg-white rounded-2xl p-6 shadow-lg">
                 <h3 className="font-semibold text-gray-900 mb-4 flex items-center">

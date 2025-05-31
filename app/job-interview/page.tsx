@@ -4,6 +4,7 @@ import { useState, useRef } from "react";
 import { ArrowLeft, Upload, Play, BookOpen, Users, Briefcase, FileText, Building, Video, Settings } from "lucide-react";
 import Link from "next/link";
 import TavusVideoInterview from "../../components/TavusVideoInterview";
+import { parseResume, ResumeData } from "../../lib/resumeParser";
 
 interface JobDetails {
   title: string;
@@ -13,7 +14,7 @@ interface JobDetails {
 }
 
 export default function JobInterview() {
-  const [step, setStep] = useState<'setup' | 'interview' | 'completed'>('setup');
+  const [step, setStep] = useState<'form' | 'interview' | 'success'>('form');
   const [jobDetails, setJobDetails] = useState<JobDetails>({
     title: '',
     company: '',
@@ -21,6 +22,9 @@ export default function JobInterview() {
     industry: ''
   });
   const [resumeFile, setResumeFile] = useState<File | null>(null);
+  const [resumeData, setResumeData] = useState<ResumeData | null>(null);
+  const [isParsingResume, setIsParsingResume] = useState(false);
+  const [resumeParseError, setResumeParseError] = useState<string | null>(null);
   const [showApiKeyInput, setShowApiKeyInput] = useState(false);
   const [apiKey, setApiKey] = useState("");
   
@@ -29,12 +33,34 @@ export default function JobInterview() {
   // For demo purposes, you can set a default API key here
   const DEMO_API_KEY = process.env.NEXT_PUBLIC_TAVUS_API_KEY || "";
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file && (file.type === 'application/pdf' || file.type.includes('document'))) {
+    if (file) {
       setResumeFile(file);
-    } else {
-      alert('Please upload a PDF or Word document');
+      setResumeParseError(null);
+      setIsParsingResume(true);
+      
+      try {
+        const result = await parseResume(file);
+        if (result.success && result.data) {
+          setResumeData(result.data);
+          console.log('Resume parsed successfully:', {
+            skills: result.data.skills.slice(0, 10),
+            experienceCount: result.data.experience.length,
+            educationCount: result.data.education.length,
+            hasSummary: !!result.data.summary
+          });
+        } else {
+          setResumeParseError(result.error || 'Failed to parse resume');
+          setResumeData(null);
+        }
+      } catch (error) {
+        setResumeParseError('Error processing resume file');
+        setResumeData(null);
+        console.error('Resume parsing error:', error);
+      } finally {
+        setIsParsingResume(false);
+      }
     }
   };
 
@@ -52,19 +78,26 @@ export default function JobInterview() {
     setStep('interview');
   };
 
-  const handleInterviewEnd = () => {
-    setStep('completed');
+  const handleInterviewEnd = (interviewData?: any) => {
+    console.log('Interview completed and saved:', interviewData);
+    setStep('success');
+  };
+
+  const handleInterviewStart = (interviewData?: any) => {
+    console.log('Interview started and saved to database:', interviewData);
   };
 
   const handleBackToSetup = () => {
-    setStep('setup');
+    setStep('form');
     setShowApiKeyInput(false);
   };
 
   const resetInterview = () => {
-    setStep('setup');
+    setStep('form');
     setJobDetails({ title: '', company: '', description: '', industry: '' });
     setResumeFile(null);
+    setResumeData(null);
+    setResumeParseError(null);
     setShowApiKeyInput(false);
     setApiKey("");
   };
@@ -129,7 +162,7 @@ export default function JobInterview() {
     );
   }
 
-  if (step === 'completed') {
+  if (step === 'success') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-pink-50">
         <header className="w-full py-6 px-4 sm:px-6 lg:px-8">
@@ -238,12 +271,16 @@ export default function JobInterview() {
                 apiKey={DEMO_API_KEY || apiKey}
                 interviewType={interviewType}
                 jobDetails={jobDetails}
+                resumeData={resumeData}
                 onInterviewEnd={handleInterviewEnd}
+                onInterviewStart={handleInterviewStart}
               />
             </div>
 
             {/* Information Sidebar */}
             <div className="space-y-6">
+         
+
               {/* Job Details */}
               <div className="bg-white rounded-2xl p-6 shadow-lg">
                 <h3 className="font-semibold text-gray-900 mb-4 flex items-center">
@@ -269,6 +306,14 @@ export default function JobInterview() {
                     <div>
                       <span className="text-gray-600">Resume:</span>
                       <p className="font-medium text-green-600">Uploaded ✓</p>
+                      {resumeData && resumeData.skills.length > 0 && (
+                        <div className="mt-2">
+                          <p className="text-xs text-gray-500">
+                            Key skills detected: {resumeData.skills.slice(0, 3).join(', ')}
+                            {resumeData.skills.length > 3 && ` +${resumeData.skills.length - 3} more`}
+                          </p>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -458,8 +503,12 @@ export default function JobInterview() {
                 Upload Resume/CV (Optional)
               </label>
               <div
-                onClick={() => fileInputRef.current?.click()}
-                className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-purple-400 transition-colors cursor-pointer"
+                onClick={() => !isParsingResume && fileInputRef.current?.click()}
+                className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
+                  isParsingResume 
+                    ? 'border-purple-300 cursor-wait' 
+                    : 'border-gray-300 hover:border-purple-400 cursor-pointer'
+                }`}
               >
                 <input
                   ref={fileInputRef}
@@ -467,8 +516,18 @@ export default function JobInterview() {
                   accept=".pdf,.doc,.docx"
                   onChange={handleFileUpload}
                   className="hidden"
+                  disabled={isParsingResume}
                 />
-                {resumeFile ? (
+                
+                {isParsingResume ? (
+                  <div className="flex items-center justify-center space-x-2">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+                    <div>
+                      <p className="text-lg font-medium text-gray-900">Analyzing Resume...</p>
+                      <p className="text-sm text-gray-500">Extracting skills and experience</p>
+                    </div>
+                  </div>
+                ) : resumeFile ? (
                   <div className="flex items-center justify-center space-x-2">
                     <FileText className="h-8 w-8 text-purple-600" />
                     <div>
@@ -476,6 +535,11 @@ export default function JobInterview() {
                       <p className="text-sm text-gray-500">
                         {(resumeFile.size / 1024 / 1024).toFixed(2)} MB
                       </p>
+                      {resumeData && (
+                        <p className="text-sm text-green-600 mt-1">
+                          ✓ Resume analyzed successfully
+                        </p>
+                      )}
                     </div>
                   </div>
                 ) : (
@@ -486,13 +550,55 @@ export default function JobInterview() {
                   </div>
                 )}
               </div>
+              
+              {/* Resume parsing error */}
+              {resumeParseError && (
+                <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+                  <p className="text-sm text-red-600">⚠️ {resumeParseError}</p>
+                  <p className="text-xs text-red-500 mt-1">
+                    You can still proceed with the interview without resume analysis.
+                  </p>
+                </div>
+              )}
+              
+              {/* Resume analysis summary */}
+              {resumeData && !resumeParseError && (
+                <div className="mt-3 p-4 bg-green-50 border border-green-200 rounded-lg">
+                  <h4 className="text-sm font-medium text-green-800 mb-2">✓ Resume Analysis Complete</h4>
+                  <div className="text-xs text-green-700 space-y-1">
+                    {resumeData.skills.length > 0 && (
+                      <p>• Found {resumeData.skills.length} relevant skills</p>
+                    )}
+                    {resumeData.experience.length > 0 && (
+                      <p>• Detected {resumeData.experience.length} work experience entries</p>
+                    )}
+                    {resumeData.education.length > 0 && (
+                      <p>• Found {resumeData.education.length} education entries</p>
+                    )}
+                    <p className="text-green-600 font-medium">The AI interviewer will ask questions based on your resume!</p>
+                  </div>
+                </div>
+              )}
+              
               {resumeFile && (
-                <button
-                  onClick={() => setResumeFile(null)}
-                  className="mt-2 text-sm text-red-600 hover:text-red-700"
-                >
-                  Remove file
-                </button>
+                <div className="mt-2 flex items-center justify-between">
+                  <button
+                    onClick={() => {
+                      setResumeFile(null);
+                      setResumeData(null);
+                      setResumeParseError(null);
+                    }}
+                    className="text-sm text-red-600 hover:text-red-700"
+                  >
+                    Remove file
+                  </button>
+                  {resumeData && resumeData.skills.length > 0 && (
+                    <p className="text-xs text-gray-500">
+                      Key skills: {resumeData.skills.slice(0, 3).join(', ')}
+                      {resumeData.skills.length > 3 && ` +${resumeData.skills.length - 3} more`}
+                    </p>
+                  )}
+                </div>
               )}
             </div>
 

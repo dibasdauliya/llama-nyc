@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { ScanText, Loader2 } from 'lucide-react';
 import { summarizeEmailStream } from '@/app/lib/llama';
 import ApiKeyMissing from './ApiKeyMissing';
+import ReactMarkdown from 'react-markdown';
 
 interface EmailSummaryStreamingProps {
   emailContent: string;
@@ -298,7 +299,11 @@ export default function EmailSummaryStreaming({ emailContent }: EmailSummaryStre
               <h3 className="text-md font-medium mb-2 text-blue-700">
                 AI Summary {isLoading && <Loader2 className="h-4 w-4 inline-block ml-2 animate-spin" />}
               </h3>
-              <div className="whitespace-pre-wrap">{summary}</div>
+              <div className="whitespace-pre-wrap">
+                <ReactMarkdown >
+                  {summary}
+                </ReactMarkdown>
+              </div>
             </div>
           )}
         </div>

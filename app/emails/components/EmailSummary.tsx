@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { ScanText, Loader2 } from 'lucide-react';
 import { summarizeEmail } from '@/app/lib/llama';
+import ReactMarkdown from 'react-markdown';
 
 interface EmailSummaryProps {
   emailContent: string;
@@ -71,7 +72,11 @@ export default function EmailSummary({ emailContent }: EmailSummaryProps) {
           ) : (
             <div className="prose prose-sm max-w-none text-gray-700">
               <h3 className="text-md font-medium mb-2 text-blue-700">AI Summary</h3>
-              <div className="whitespace-pre-wrap">{summary}</div>
+              <div className="whitespace-pre-wrap">
+                <ReactMarkdown >
+                  {summary}
+                </ReactMarkdown>
+              </div>
             </div>
           )}
         </div>

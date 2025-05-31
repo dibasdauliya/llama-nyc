@@ -65,7 +65,7 @@ export default function TavusVideoInterview({
     resetSession
   } = useInterviewSession();
 
-  const isLoading = tavusLoading || sessionLoading;
+  const isLoading = tavusLoading;
   const error = tavusError || sessionError;
 
   // Auto-hide controls after 3 seconds of no mouse movement
@@ -175,10 +175,7 @@ export default function TavusVideoInterview({
       
       const { type, data } = event.data;
       
-      // Mark conversation as ready on first data received
-      if (tavusLoading) {
-        markConversationReady();
-      }
+   
       
       switch (type) {
         case 'conversation_question':
@@ -206,9 +203,27 @@ export default function TavusVideoInterview({
       }
     };
 
+       // Mark conversation as ready on first data received
+      if (conversationUrl) {
+        console.log('Marking conversation as ready');
+        console.log('Marking conversation as ready');
+        console.log('Marking conversation as ready');
+        console.log('Marking conversation as ready');
+        console.log('Marking conversation as ready');
+        console.log('Marking conversation as ready');
+        console.log('Marking conversation as ready');
+        console.log('Marking conversation as ready');
+        console.log('Marking conversation as ready');
+        console.log('Marking conversation as ready');
+        console.log('Marking conversation as ready');
+
+        console.log(conversationUrl);
+        markConversationReady();
+      }
+
     window.addEventListener('message', handleMessage);
     return () => window.removeEventListener('message', handleMessage);
-  }, [interviewSession.isActive, addQuestion, tavusLoading, markConversationReady]);
+  }, [interviewSession.isActive, addQuestion, conversationUrl, markConversationReady]);
 
   const toggleMute = () => {
     setIsMuted(!isMuted);

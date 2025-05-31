@@ -241,7 +241,6 @@ When rejecting, clearly state: "I'm sorry, but based on your responses, you do n
       setState(prev => ({ 
         ...prev, 
         personaId: persona!.persona_id,
-        isLoading: false 
       }));
 
       return persona.persona_id;
@@ -332,7 +331,7 @@ When rejecting, clearly state: "I'm sorry, but based on your responses, you do n
 
   // Mark conversation as ready (call this when you get first data)
   const markConversationReady = useCallback(() => {
-    setState(prev => ({ ...prev, isLoading: false }));
+    setState(prev => ({ ...prev, isLoading: false, isConnected: true }));
   }, []);
 
   // Reset the interview state

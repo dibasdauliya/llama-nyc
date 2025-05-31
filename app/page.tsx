@@ -84,184 +84,165 @@ export default function Home() {
 
         {/* Interview Options */}
         <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-          {/* VISA Interview Card */}
-          <Link href="/visa-interview">
-            <div
-              className={`group relative p-8 rounded-2xl cursor-pointer overflow-hidden transform transition-all duration-200 ease-out ${
-                hoveredCard === "visa" 
-                  ? "scale-[1.02] shadow-2xl shadow-blue-500/15 -translate-y-1" 
-                  : "shadow-lg hover:shadow-xl scale-100 translate-y-0"
-              }`}
-              style={{
-                background: "linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%)"
-              }}
-              onMouseEnter={() => setHoveredCard("visa")}
-              onMouseLeave={() => setHoveredCard(null)}
-            >
-              <div className="relative z-10">
-                <div className={`inline-flex p-3 rounded-xl mb-6 transform transition-all duration-150 ease-out ${
-                  hoveredCard === "visa" 
-                    ? "bg-blue-200/60 scale-110 rotate-3" 
-                    : "bg-blue-100 scale-100 rotate-0"
-                }`}>
-                  <GraduationCap className={`h-8 w-8 transition-all duration-150 ease-out ${
-                    hoveredCard === "visa" ? "text-blue-700 scale-110" : "text-blue-600 scale-100"
-                  }`} />
-                </div>
-                
-                <h3 className={`text-2xl font-bold mb-4 transition-all duration-150 ease-out ${
-                  hoveredCard === "visa" ? "text-blue-900 transform translate-x-1" : "text-gray-900 transform translate-x-0"
-                }`}>
-                  US VISA Interview
-                </h3>
-                
-                <p className={`text-lg mb-6 transition-all duration-150 ease-out ${
-                  hoveredCard === "visa" ? "text-blue-700" : "text-gray-600"
-                }`}>
-                  Practice with an AI VISA officer avatar. Experience authentic embassy interview 
-                  scenarios with realistic questions and professional demeanor.
-                </p>
-                
-                <ul className={`space-y-2 mb-8 transition-all duration-150 ease-out ${
-                  hoveredCard === "visa" ? "text-blue-700" : "text-gray-600"
-                }`}>
-                  <li className="flex items-center space-x-2 transform transition-transform duration-200 group-hover:translate-x-1">
-                    <div className={`w-1.5 h-1.5 rounded-full transition-all duration-150 ease-out ${
-                      hoveredCard === "visa" ? "bg-blue-700 scale-125" : "bg-blue-600 scale-100"
-                    }`}></div>
-                    <span>Student, Tourist & Work VISAs</span>
-                  </li>
-                  <li className="flex items-center space-x-2 transform transition-transform duration-200 delay-50 group-hover:translate-x-1">
-                    <div className={`w-1.5 h-1.5 rounded-full transition-all duration-150 ease-out ${
-                      hoveredCard === "visa" ? "bg-blue-700 scale-125" : "bg-blue-600 scale-100"
-                    }`}></div>
-                    <span>AI avatar with professional demeanor</span>
-                  </li>
-                  <li className="flex items-center space-x-2 transform transition-transform duration-200 delay-100 group-hover:translate-x-1">
-                    <div className={`w-1.5 h-1.5 rounded-full transition-all duration-150 ease-out ${
-                      hoveredCard === "visa" ? "bg-blue-700 scale-125" : "bg-blue-600 scale-100"
-                    }`}></div>
-                    <span>Real-time video conversation</span>
-                  </li>
-                </ul>
-                
-                <div className={`flex items-center space-x-2 font-semibold transition-all duration-150 ease-out transform ${
-                  hoveredCard === "visa" ? "text-blue-800 translate-x-2" : "text-blue-600 translate-x-0"
-                }`}>
-                  <Video className="h-5 w-5 transition-transform duration-200 ease-out" />
-                  <span>Start AI Video Interview</span>
-                  <ArrowRight className={`h-5 w-5 transition-all duration-200 ease-out ${
-                    hoveredCard === "visa" ? "translate-x-2 scale-110" : "translate-x-0 scale-100"
-                  }`} />
-                </div>
-              </div>
-              
-              {/* Background Pattern */}
-              <div className={`absolute inset-0 opacity-10 transition-all duration-300 ease-out ${
-                hoveredCard === "visa" ? "scale-110 rotate-1" : "scale-100 rotate-0"
-              }`}>
-                <div className="absolute top-4 right-4 w-24 h-24 border border-blue-600 rounded-full transition-transform duration-500 ease-out group-hover:rotate-12"></div>
-                <div className="absolute bottom-4 left-4 w-16 h-16 border border-blue-600 rounded-full transition-transform duration-700 ease-out group-hover:-rotate-12"></div>
-              </div>
-              
-              {/* Subtle Hover Overlay */}
-              <div className={`absolute inset-0 rounded-2xl transition-opacity duration-200 ease-out ${
-                hoveredCard === "visa" 
-                  ? "opacity-100 bg-gradient-to-br from-blue-600/8 to-indigo-600/12" 
-                  : "opacity-0"
-              }`}></div>
-            </div>
-          </Link>
-
-          {/* Job Interview Card */}
-          <Link href="/job-interview">
-            <div
-              className={`group relative p-8 rounded-2xl cursor-pointer overflow-hidden transform transition-all duration-200 ease-out ${
-                hoveredCard === "job" 
-                  ? "scale-[1.02] shadow-2xl shadow-purple-500/15 -translate-y-1" 
-                  : "shadow-lg hover:shadow-xl scale-100 translate-y-0"
-              }`}
-              style={{
-                background: "linear-gradient(135deg, #FAF5FF 0%, #F3E8FF 100%)"
-              }}
-              onMouseEnter={() => setHoveredCard("job")}
-              onMouseLeave={() => setHoveredCard(null)}
-            >
-              <div className="relative z-10">
-                <div className={`inline-flex p-3 rounded-xl mb-6 transform transition-all duration-150 ease-out ${
-                  hoveredCard === "job" 
-                    ? "bg-purple-200/60 scale-110 -rotate-3" 
-                    : "bg-purple-100 scale-100 rotate-0"
-                }`}>
-                  <Briefcase className={`h-8 w-8 transition-all duration-150 ease-out ${
-                    hoveredCard === "job" ? "text-purple-700 scale-110" : "text-purple-600 scale-100"
-                  }`} />
-                </div>
-                
-                <h3 className={`text-2xl font-bold mb-4 transition-all duration-150 ease-out ${
-                  hoveredCard === "job" ? "text-purple-900 transform translate-x-1" : "text-gray-900 transform translate-x-0"
-                }`}>
-                  Job Interview
-                </h3>
-                
-                <p className={`text-lg mb-6 transition-all duration-150 ease-out ${
-                  hoveredCard === "job" ? "text-purple-700" : "text-gray-600"
-                }`}>
-                  Interview with an AI HR professional or technical interviewer. 
-                  Tailored questions based on your role, industry, and uploaded resume.
-                </p>
-                
-                <ul className={`space-y-2 mb-8 transition-all duration-150 ease-out ${
-                  hoveredCard === "job" ? "text-purple-700" : "text-gray-600"
-                }`}>
-                  <li className="flex items-center space-x-2 transform transition-transform duration-200 group-hover:translate-x-1">
-                    <div className={`w-1.5 h-1.5 rounded-full transition-all duration-150 ease-out ${
-                      hoveredCard === "job" ? "bg-purple-700 scale-125" : "bg-purple-600 scale-100"
-                    }`}></div>
-                    <span>HR & Technical interview modes</span>
-                  </li>
-                  <li className="flex items-center space-x-2 transform transition-transform duration-200 delay-50 group-hover:translate-x-1">
-                    <div className={`w-1.5 h-1.5 rounded-full transition-all duration-150 ease-out ${
-                      hoveredCard === "job" ? "bg-purple-700 scale-125" : "bg-purple-600 scale-100"
-                    }`}></div>
-                    <span>Resume analysis & personalization</span>
-                  </li>
-                  <li className="flex items-center space-x-2 transform transition-transform duration-200 delay-100 group-hover:translate-x-1">
-                    <div className={`w-1.5 h-1.5 rounded-full transition-all duration-150 ease-out ${
-                      hoveredCard === "job" ? "bg-purple-700 scale-125" : "bg-purple-600 scale-100"
-                    }`}></div>
-                    <span>Industry-specific AI interviewer</span>
-                  </li>
-                </ul>
-                
-                <div className={`flex items-center space-x-2 font-semibold transition-all duration-150 ease-out transform ${
-                  hoveredCard === "job" ? "text-purple-800 translate-x-2" : "text-purple-600 translate-x-0"
-                }`}>
-                  <Video className="h-5 w-5 transition-transform duration-200 ease-out" />
-                  <span>Start AI Video Interview</span>
-                  <ArrowRight className={`h-5 w-5 transition-all duration-200 ease-out ${
-                    hoveredCard === "job" ? "translate-x-2 scale-110" : "translate-x-0 scale-100"
-                  }`} />
-                </div>
-              </div>
-              
-              {/* Background Pattern */}
-              <div className={`absolute inset-0 opacity-10 transition-all duration-300 ease-out ${
-                hoveredCard === "job" ? "scale-110 -rotate-1" : "scale-100 rotate-0"
-              }`}>
-                <div className="absolute top-4 right-4 w-24 h-24 border border-purple-600 rounded-full transition-transform duration-500 ease-out group-hover:-rotate-12"></div>
-                <div className="absolute bottom-4 left-4 w-16 h-16 border border-purple-600 rounded-full transition-transform duration-700 ease-out group-hover:rotate-12"></div>
-              </div>
-              
-              {/* Subtle Hover Overlay */}
-              <div className={`absolute inset-0 rounded-2xl transition-opacity duration-200 ease-out ${
-                hoveredCard === "job" 
-                  ? "opacity-100 bg-gradient-to-br from-purple-600/8 to-violet-600/12" 
-                  : "opacity-0"
-              }`}></div>
-            </div>
-          </Link>
+  {/* VISA Interview Card */}
+  <Link href="/visa-interview">
+    <div
+      className={`group relative p-8 rounded-2xl cursor-pointer overflow-hidden transform transition-all duration-200 ease-out ${
+        hoveredCard === "visa" 
+          ? "scale-[1.02] shadow-2xl shadow-blue-500/15 -translate-y-1" 
+          : "shadow-lg hover:shadow-xl scale-100 translate-y-0"
+      }`}
+      style={{
+        background: "linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%)"
+      }}
+      onMouseEnter={() => setHoveredCard("visa")}
+      onMouseLeave={() => setHoveredCard(null)}
+    >
+      <div className="relative z-10">
+        <div className={`inline-flex p-3 rounded-xl mb-6 transform transition-all duration-150 ease-out ${
+          hoveredCard === "visa" 
+            ? "bg-blue-200/60 scale-110 rotate-3" 
+            : "bg-blue-100 scale-100 rotate-0"
+        }`}>
+          <GraduationCap className={`h-8 w-8 transition-all duration-150 ease-out ${
+            hoveredCard === "visa" ? "text-blue-700 scale-110" : "text-blue-600 scale-100"
+          }`} />
         </div>
+
+        <h3 className={`text-2xl font-bold mb-4 transition-all duration-150 ease-out ${
+          hoveredCard === "visa" ? "text-blue-900 translate-x-1" : "text-gray-900 translate-x-0"
+        }`}>
+          US VISA Interview
+        </h3>
+
+        <p className={`text-lg mb-6 transition-all duration-150 ease-out ${
+          hoveredCard === "visa" ? "text-blue-700" : "text-gray-600"
+        }`}>
+          Practice with an AI VISA officer avatar. Experience authentic embassy interview 
+          scenarios with realistic questions and professional demeanor.
+        </p>
+
+        <ul className={`space-y-2 mb-8 transition-all duration-150 ease-out ${
+          hoveredCard === "visa" ? "text-blue-700" : "text-gray-600"
+        }`}>
+          {["Student, Tourist & Work VISAs", "AI avatar with professional demeanor", "Real-time video conversation"].map((text, i) => (
+            <li key={i} className={`flex items-center space-x-2 transform transition-transform duration-200 delay-[${i * 50}ms] group-hover:translate-x-1`}>
+              <div className={`w-1.5 h-1.5 rounded-full transition-all duration-150 ease-out ${
+                hoveredCard === "visa" ? "bg-blue-700 scale-125" : "bg-blue-600 scale-100"
+              }`}></div>
+              <span className="transition-colors duration-150 ease-out">{text}</span>
+            </li>
+          ))}
+        </ul>
+
+        <div className={`flex items-center space-x-2 font-semibold transition-all duration-150 ease-out transform ${
+          hoveredCard === "visa" ? "text-blue-800 translate-x-2" : "text-blue-600 translate-x-0"
+        }`}>
+          <Video className="h-5 w-5 transition-transform duration-200 ease-out" />
+          <span>Start AI Video Interview</span>
+          <ArrowRight className={`h-5 w-5 transition-all duration-200 ease-out ${
+            hoveredCard === "visa" ? "translate-x-2 scale-110" : "translate-x-0 scale-100"
+          }`} />
+        </div>
+      </div>
+
+      {/* Background Pattern */}
+      <div className={`absolute inset-0 opacity-10 transition-all duration-300 ease-out ${
+        hoveredCard === "visa" ? "scale-110 rotate-1" : "scale-100 rotate-0"
+      }`}>
+        <div className="absolute top-4 right-4 w-24 h-24 border border-blue-600 rounded-full transition-transform duration-500 ease-out group-hover:rotate-12"></div>
+        <div className="absolute bottom-4 left-4 w-16 h-16 border border-blue-600 rounded-full transition-transform duration-700 ease-out group-hover:-rotate-12"></div>
+      </div>
+
+      {/* Subtle Hover Overlay */}
+      <div className={`absolute inset-0 rounded-2xl transition-opacity duration-200 ease-out ${
+        hoveredCard === "visa" 
+          ? "opacity-100 bg-gradient-to-br from-blue-600/8 to-indigo-600/12" 
+          : "opacity-0"
+      }`}></div>
+    </div>
+  </Link>
+
+  {/* Job Interview Card */}
+    <Link href="/job-interview">
+      <div
+        className={`group relative p-8 rounded-2xl cursor-pointer overflow-hidden transform transition-all duration-200 ease-out ${
+          hoveredCard === "job" 
+            ? "scale-[1.02] shadow-2xl shadow-purple-500/15 -translate-y-1" 
+            : "shadow-lg hover:shadow-xl scale-100 translate-y-0"
+        }`}
+        style={{
+          background: "linear-gradient(135deg, #FAF5FF 0%, #F3E8FF 100%)"
+        }}
+        onMouseEnter={() => setHoveredCard("job")}
+        onMouseLeave={() => setHoveredCard(null)}
+      >
+        <div className="relative z-10">
+          <div className={`inline-flex p-3 rounded-xl mb-6 transform transition-all duration-150 ease-out ${
+            hoveredCard === "job" 
+              ? "bg-purple-200/60 scale-110 -rotate-3" 
+              : "bg-purple-100 scale-100 rotate-0"
+          }`}>
+            <Briefcase className={`h-8 w-8 transition-all duration-150 ease-out ${
+              hoveredCard === "job" ? "text-purple-700 scale-110" : "text-purple-600 scale-100"
+            }`} />
+          </div>
+
+          <h3 className={`text-2xl font-bold mb-4 transition-all duration-150 ease-out ${
+            hoveredCard === "job" ? "text-purple-900 translate-x-1" : "text-gray-900 translate-x-0"
+          }`}>
+            Job Interview
+          </h3>
+
+          <p className={`text-lg mb-6 transition-all duration-150 ease-out ${
+            hoveredCard === "job" ? "text-purple-700" : "text-gray-600"
+          }`}>
+            Interview with an AI HR professional or technical interviewer. 
+            Tailored questions based on your role, industry, and uploaded resume.
+          </p>
+
+          <ul className={`space-y-2 mb-8 transition-all duration-150 ease-out ${
+            hoveredCard === "job" ? "text-purple-700" : "text-gray-600"
+          }`}>
+            {["HR & Technical interview modes", "Resume analysis & personalization", "Industry-specific AI interviewer"].map((text, i) => (
+              <li key={i} className={`flex items-center space-x-2 transform transition-transform duration-200 delay-[${i * 50}ms] group-hover:translate-x-1`}>
+                <div className={`w-1.5 h-1.5 rounded-full transition-all duration-150 ease-out ${
+                  hoveredCard === "job" ? "bg-purple-700 scale-125" : "bg-purple-600 scale-100"
+                }`}></div>
+                <span className="transition-colors duration-150 ease-out">{text}</span>
+              </li>
+            ))}
+          </ul>
+
+          <div className={`flex items-center space-x-2 font-semibold transition-all duration-150 ease-out transform ${
+            hoveredCard === "job" ? "text-purple-800 translate-x-2" : "text-purple-600 translate-x-0"
+          }`}>
+            <Video className="h-5 w-5 transition-transform duration-200 ease-out" />
+            <span>Start AI Video Interview</span>
+            <ArrowRight className={`h-5 w-5 transition-all duration-200 ease-out ${
+              hoveredCard === "job" ? "translate-x-2 scale-110" : "translate-x-0 scale-100"
+            }`} />
+          </div>
+        </div>
+
+        {/* Background Pattern */}
+        <div className={`absolute inset-0 opacity-10 transition-all duration-300 ease-out ${
+          hoveredCard === "job" ? "scale-110 -rotate-1" : "scale-100 rotate-0"
+        }`}>
+          <div className="absolute top-4 right-4 w-24 h-24 border border-purple-600 rounded-full transition-transform duration-500 ease-out group-hover:-rotate-12"></div>
+          <div className="absolute bottom-4 left-4 w-16 h-16 border border-purple-600 rounded-full transition-transform duration-700 ease-out group-hover:rotate-12"></div>
+        </div>
+
+        {/* Subtle Hover Overlay */}
+        <div className={`absolute inset-0 rounded-2xl transition-opacity duration-200 ease-out ${
+          hoveredCard === "job" 
+            ? "opacity-100 bg-gradient-to-br from-purple-600/8 to-violet-600/12" 
+            : "opacity-0"
+        }`}></div>
+      </div>
+    </Link>
+</div>
+
 
         {/* Features Section */}
         <div className="mt-24 text-center">

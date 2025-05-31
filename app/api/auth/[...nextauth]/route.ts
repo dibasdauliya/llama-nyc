@@ -2,6 +2,7 @@ import NextAuth, { AuthOptions } from "next-auth"
 import GoogleProvider from "next-auth/providers/google"
 import { PrismaAdapter } from "@next-auth/prisma-adapter"
 import { prisma } from "@/lib/prisma"
+import { google } from "googleapis"
 
 export const authOptions: AuthOptions = {
   adapter: PrismaAdapter(prisma),
@@ -12,6 +13,13 @@ export const authOptions: AuthOptions = {
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+      authorization: {
+        params: {
+          scope: 'https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.send',
+          prompt: "consent",
+          access_type: "offline",
+        }
+      }
     })
   ],
   callbacks: {
@@ -23,6 +31,54 @@ export const authOptions: AuthOptions = {
         tokenId: token.id,
         userObject: user ? { id: user.id, email: user.email } : null
       });
+
+      // If this is a sign-in, save the access and refresh tokens
+      if (account) {
+        console.log('Saving tokens from account:', {
+          hasAccessToken: !!account.access_token,
+          accessTokenLength: account.access_token?.length,
+          hasRefreshToken: !!account.refresh_token,
+          expiresAt: account.expires_at
+        });
+        
+        token.accessToken = account.access_token;
+        token.refreshToken = account.refresh_token;
+        token.accessTokenExpires = account.expires_at! * 1000; // Convert to ms
+      }
+
+      // If we have a token but it's expired, try to refresh it
+      const currentTime = Date.now();
+      if (token.accessTokenExpires && currentTime > token.accessTokenExpires && token.refreshToken) {
+        console.log('Access token expired, attempting to refresh...');
+        try {
+          // Create a new OAuth2 client
+          const oauth2Client = new google.auth.OAuth2(
+            process.env.GOOGLE_CLIENT_ID!,
+            process.env.GOOGLE_CLIENT_SECRET!,
+            process.env.GOOGLE_REDIRECT_URI
+          );
+          
+          // Set the refresh token
+          oauth2Client.setCredentials({
+            refresh_token: token.refreshToken
+          });
+          
+          // Get a new access token
+          const response = await oauth2Client.refreshAccessToken();
+          console.log('Token refreshed successfully');
+          
+          // Update the token
+          // @ts-ignore: The type definition doesn't match the actual response
+          token.accessToken = response.credentials.access_token;
+          token.accessTokenExpires = Date.now() + (response.credentials.expiry_date! - Date.now());
+        } catch (error) {
+          console.error('Error refreshing access token:', error);
+          // Token refresh failed, clear the tokens to force a new sign-in
+          token.accessToken = undefined;
+          token.refreshToken = undefined;
+          token.accessTokenExpires = undefined;
+        }
+      }
 
       // If this is a new sign-in, user object will contain the user data
       if (user) {
@@ -64,9 +120,13 @@ export const authOptions: AuthOptions = {
         console.log('Could not add ID to session - missing token.id or session.user');
       }
 
+      // Add access token to session so it can be used by client
+      session.accessToken = token.accessToken;
+      
       console.log('Session callback returning:', {
         hasId: !!session.user?.id,
-        email: session.user?.email
+        email: session.user?.email,
+        hasAccessToken: !!session.accessToken
       });
       return session;
     },

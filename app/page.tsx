@@ -60,7 +60,7 @@ export default function HomePage() {
           setRepoStatus({
             exists: false,
             needsAuth: false,
-            message: `❌ Repository not found or you don't have access to it.`
+            message: `❌ Repository not found or you don&apos;t have access to it.`
           })
         }
       }

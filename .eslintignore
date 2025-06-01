@@ -1,0 +1,8 @@
+# Ignore everything
+*
+**/*
+.next/
+node_modules/
+build/
+dist/
+.env* 

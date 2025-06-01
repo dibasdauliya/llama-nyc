@@ -2,6 +2,62 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '../../auth/[...nextauth]/route'
 
+interface ChatMessage {
+  role: 'user' | 'assistant' | 'system'
+  content: string
+}
+
+interface TechStack {
+  name: string
+  type: string
+  confidence: string
+}
+
+interface FileType {
+  name: string
+  lines: number
+}
+
+interface Vulnerability {
+  severity: string
+  title: string
+  description: string
+}
+
+interface Contributor {
+  login: string
+  contributions: number
+}
+
+interface CodeMetrics {
+  totalLines: number
+  totalFiles: number
+  avgComplexity: number
+  testCoverage: number
+}
+
+interface Analysis {
+  codeMetrics?: CodeMetrics
+  securityScore?: number
+  maintainabilityScore?: number
+  documentationScore?: number
+  techStack?: TechStack[]
+  fileTypes?: FileType[]
+  vulnerabilities?: Vulnerability[]
+  contributors?: Contributor[]
+}
+
+interface Repository {
+  name: string
+  description?: string
+  language?: string
+  stars?: number
+  forks?: number
+  private?: boolean
+  license?: string
+  topics?: string[]
+}
+
 export async function POST(request: NextRequest) {
   try {
     const { message, repository, analysis, chatHistory } = await request.json()
@@ -41,22 +97,22 @@ QUALITY SCORES:
 - Documentation Score: ${analysis.documentationScore || 'N/A'}/100
 
 TECHNOLOGY STACK:
-${analysis.techStack?.map((tech: any) => `- ${tech.name}: ${tech.type} (${tech.confidence} confidence)`).join('\n') || 'No technologies detected'}
+${analysis.techStack?.map((tech: TechStack) => `- ${tech.name}: ${tech.type} (${tech.confidence} confidence)`).join('\n') || 'No technologies detected'}
 
 LANGUAGE DISTRIBUTION:
-${analysis.fileTypes?.map((type: any) => {
-  const total = analysis.fileTypes?.reduce((sum: any, item: any) => sum + item.lines, 0) || 1;
+${analysis.fileTypes?.map((type: FileType) => {
+  const total = analysis.fileTypes?.reduce((sum: number, item: FileType) => sum + item.lines, 0) || 1;
   const percentage = ((type.lines / total) * 100).toFixed(1);
   return `- ${type.name}: ${type.lines.toLocaleString()} lines (${percentage}%)`;
 }).join('\n') || 'No file type data available'}
 
 SECURITY VULNERABILITIES:
 ${analysis.vulnerabilities?.length > 0 
-  ? analysis.vulnerabilities.map((vuln: any) => `- ${vuln.severity?.toUpperCase()}: ${vuln.title} - ${vuln.description}`).join('\n')
+  ? analysis.vulnerabilities.map((vuln: Vulnerability) => `- ${vuln.severity?.toUpperCase()}: ${vuln.title} - ${vuln.description}`).join('\n')
   : 'No security vulnerabilities detected'}
 
 TOP CONTRIBUTORS:
-${analysis.contributors?.slice(0, 5).map((contrib: any) => `- ${contrib.login}: ${contrib.contributions?.toLocaleString()} commits`).join('\n') || 'No contributor data available'}
+${analysis.contributors?.slice(0, 5).map((contrib: Contributor) => `- ${contrib.login}: ${contrib.contributions?.toLocaleString()} commits`).join('\n') || 'No contributor data available'}
 
 INSTRUCTIONS:
 1. Provide accurate, helpful responses based on the repository data above
@@ -78,7 +134,7 @@ Always base your responses on the actual repository data provided above.`
 
     try {
       // Build messages array for the LLM
-      const messages = [
+      const messages: ChatMessage[] = [
         {
           role: 'system',
           content: systemPrompt
@@ -87,7 +143,7 @@ Always base your responses on the actual repository data provided above.`
 
       // Add chat history for context
       if (chatHistory && chatHistory.length > 0) {
-        chatHistory.slice(-5).forEach((msg: any) => {
+        chatHistory.slice(-5).forEach((msg: ChatMessage) => {
           messages.push({
             role: msg.role === 'user' ? 'user' : 'assistant',
             content: msg.content
@@ -167,7 +223,7 @@ Always base your responses on the actual repository data provided above.`
   }
 }
 
-function generateContextualResponse(message: string, repository: any, analysis: any): string {
+function generateContextualResponse(message: string, repository: Repository, analysis: Analysis): string {
   // Technology-related questions
   if (message.includes('technolog') || message.includes('stack') || message.includes('framework')) {
     const techStack = analysis.techStack || []
@@ -176,11 +232,11 @@ function generateContextualResponse(message: string, repository: any, analysis: 
     return `## Technology Stack Analysis
 
 **Primary Technologies:**
-${techStack.slice(0, 5).map((tech: any) => `• **${tech.name}** - ${tech.type} ${tech.confidence === 'high' ? '✅' : '⚠️'}`).join('\n')}
+${techStack.slice(0, 5).map((tech: TechStack) => `• **${tech.name}** - ${tech.type} ${tech.confidence === 'high' ? '✅' : '⚠️'}`).join('\n')}
 
 **Language Distribution:**
-${languages.slice(0, 3).map((lang: any) => {
-  const total = languages.reduce((sum: number, l: any) => sum + l.lines, 0)
+${languages.slice(0, 3).map((lang: FileType) => {
+  const total = languages.reduce((sum: number, l: FileType) => sum + l.lines, 0)
   const percentage = ((lang.lines / total) * 100).toFixed(1)
   return `• **${lang.name}**: ${percentage}% (${lang.lines.toLocaleString()} lines)`
 }).join('\n')}
@@ -188,7 +244,7 @@ ${languages.slice(0, 3).map((lang: any) => {
 **Key Insights:**
 - This project uses **${repository.language || 'multiple languages'}** as the primary language
 - Technology stack suggests a **${getTechStackType(techStack)}** project
-- The codebase shows **${getComplexityLevel(analysis.codeMetrics?.avgComplexity)}** complexity levels`
+- The codebase shows **${getComplexityLevel(analysis.codeMetrics?.avgComplexity || 0)}** complexity levels`
   }
 
   // Code quality questions
@@ -196,9 +252,9 @@ ${languages.slice(0, 3).map((lang: any) => {
     return `## Code Quality Assessment
 
 **Overall Scores:**
-• **Security**: ${analysis.securityScore || 'N/A'}/100 ${getScoreEmoji(analysis.securityScore)}
-• **Maintainability**: ${analysis.maintainabilityScore || 'N/A'}/100 ${getScoreEmoji(analysis.maintainabilityScore)}
-• **Documentation**: ${analysis.documentationScore || 'N/A'}/100 ${getScoreEmoji(analysis.documentationScore)}
+• **Security**: ${analysis.securityScore || 'N/A'}/100 ${getScoreEmoji(analysis.securityScore || 0)}
+• **Maintainability**: ${analysis.maintainabilityScore || 'N/A'}/100 ${getScoreEmoji(analysis.maintainabilityScore || 0)}
+• **Documentation**: ${analysis.documentationScore || 'N/A'}/100 ${getScoreEmoji(analysis.documentationScore || 0)}
 
 **Code Metrics:**
 • **Lines of Code**: ${(analysis.codeMetrics?.totalLines || 0).toLocaleString()}
@@ -218,8 +274,8 @@ ${getQualityInsights(analysis)}`
 ${getImprovementSuggestions(analysis)}
 
 **Security Considerations:**
-${analysis.vulnerabilities?.length > 0 
-  ? analysis.vulnerabilities.map((vuln: any) => `• **${vuln.severity.toUpperCase()}**: ${vuln.title} - ${vuln.description}`).join('\n')
+${(analysis.vulnerabilities?.length || 0) > 0 
+  ? analysis.vulnerabilities?.map((vuln: Vulnerability) => `• **${vuln.severity.toUpperCase()}**: ${vuln.title} - ${vuln.description}`).join('\n')
   : '✅ No immediate security vulnerabilities detected'}
 
 **Next Steps:**
@@ -271,7 +327,7 @@ I can provide insights about:
 Feel free to ask specific questions about any of these areas!`
 }
 
-function getTechStackType(techStack: any[]): string {
+function getTechStackType(techStack: TechStack[]): string {
   if (techStack.some(t => t.name.toLowerCase().includes('react') || t.name.toLowerCase().includes('vue') || t.name.toLowerCase().includes('angular'))) {
     return 'frontend-focused'
   }
@@ -296,7 +352,7 @@ function getScoreEmoji(score: number): string {
   return '🔴'
 }
 
-function getQualityInsights(analysis: any): string {
+function getQualityInsights(analysis: Analysis): string {
   const insights = []
   
   if ((analysis.securityScore || 0) < 60) {
@@ -319,7 +375,7 @@ function getQualityInsights(analysis: any): string {
   return insights.join('\n')
 }
 
-function getImprovementSuggestions(analysis: any): string {
+function getImprovementSuggestions(analysis: Analysis): string {
   const suggestions = []
   
   if ((analysis.securityScore || 0) < 70) {
@@ -342,14 +398,14 @@ function getImprovementSuggestions(analysis: any): string {
   return suggestions.join('\n')
 }
 
-function getProjectType(repository: any, analysis: any): string {
+function getProjectType(repository: Repository, analysis: Analysis): string {
   const techStack = analysis.techStack || []
   const name = repository.name.toLowerCase()
   
-  if (name.includes('api') || techStack.some((t: any) => t.type.includes('Backend'))) {
+  if (name.includes('api') || techStack.some((t: TechStack) => t.type.includes('Backend'))) {
     return 'API/Backend'
   }
-  if (name.includes('app') || name.includes('ui') || techStack.some((t: any) => t.type.includes('Frontend'))) {
+  if (name.includes('app') || name.includes('ui') || techStack.some((t: TechStack) => t.type.includes('Frontend'))) {
     return 'Application/Frontend'
   }
   if (name.includes('lib') || name.includes('package')) {
@@ -358,11 +414,10 @@ function getProjectType(repository: any, analysis: any): string {
   return 'Development'
 }
 
-function getActivityLevel(analysis: any): string {
+function getActivityLevel(analysis: Analysis): string {
   const contributors = analysis.contributors?.length || 0
-  const commits = analysis.commits?.reduce((sum: number, day: any) => sum + day.count, 0) || 0
   
-  if (contributors > 10 && commits > 50) return 'high'
-  if (contributors > 3 && commits > 20) return 'moderate'
+  if (contributors > 10) return 'high'
+  if (contributors > 3) return 'moderate'
   return 'low'
 } 

@@ -405,7 +405,7 @@ export default function AnalyzePage() {
                 <>
                   <div className="bg-green-900/20 border border-green-500/30 rounded-lg p-4 mb-6">
                     <p className="text-green-200 text-sm">
-                      ✅ You're signed in as <strong>{session.user?.name}</strong>
+                      ✅ You&apos;re signed in as <strong>{session.user?.name}</strong>
                     </p>
                     <p className="text-green-100 text-xs mt-1">
                       Retrying repository access...

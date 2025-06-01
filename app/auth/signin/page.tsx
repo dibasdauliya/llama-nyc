@@ -31,7 +31,7 @@ export default function SignIn() {
 
           {/* Benefits */}
           <div className="bg-purple-900/20 border border-purple-500/30 rounded-lg p-6 mb-8">
-            <h3 className="font-semibold text-white mb-3">What you'll get:</h3>
+            <h3 className="font-semibold text-white mb-3">What you&apos;ll get:</h3>
             <ul className="space-y-2 text-sm text-gray-300">
               <li className="flex items-start">
                 <span className="text-green-400 mr-2">✓</span>

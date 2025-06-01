@@ -312,9 +312,9 @@ export default function VisaInterview() {
                       {point}
                     </li>
                   ))}
-                  <li className="text-sm text-gray-500 italic">
+                  {/* <li className="text-sm text-gray-500 italic">
                     +{visa.keyPoints.length - 3} more areas
-                  </li>
+                  </li> */}
                 </ul>
               </div>
               

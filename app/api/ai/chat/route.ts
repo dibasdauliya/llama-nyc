@@ -16,74 +16,154 @@ export async function POST(request: NextRequest) {
     // Get user session for potential rate limiting
     const session = await getServerSession(authOptions)
 
-    // Build context from repository and analysis data
-    const context = `
-Repository: ${repository.name}
-Description: ${repository.description || 'No description'}
-Language: ${repository.language || 'Unknown'}
-Stars: ${repository.stars || 0}
-Forks: ${repository.forks || 0}
-Private: ${repository.private ? 'Yes' : 'No'}
-License: ${repository.license || 'No license'}
+    // Build comprehensive system prompt with repository context
+    const systemPrompt = `You are an expert software engineer and code analyst assistant. You have been provided with detailed information about a GitHub repository and its comprehensive analysis. Your role is to help users understand the codebase, provide insights, and answer questions about the repository.
 
-Code Analysis:
-- Total Lines: ${analysis.codeMetrics?.totalLines?.toLocaleString() || 'Unknown'}
-- Total Files: ${analysis.codeMetrics?.totalFiles?.toLocaleString() || 'Unknown'}
+REPOSITORY INFORMATION:
+- Name: ${repository.name}
+- Description: ${repository.description || 'No description provided'}
+- Primary Language: ${repository.language || 'Unknown'}
+- Stars: ${(repository.stars || 0).toLocaleString()}
+- Forks: ${(repository.forks || 0).toLocaleString()}
+- Visibility: ${repository.private ? 'Private' : 'Public'}
+- License: ${repository.license || 'No license specified'}
+- Topics: ${repository.topics?.join(', ') || 'None'}
+
+CODE ANALYSIS METRICS:
+- Total Lines of Code: ${(analysis.codeMetrics?.totalLines || 0).toLocaleString()}
+- Total Files: ${(analysis.codeMetrics?.totalFiles || 0).toLocaleString()}
 - Average Complexity: ${analysis.codeMetrics?.avgComplexity || 'Unknown'}
 - Test Coverage: ${analysis.codeMetrics?.testCoverage || 'Unknown'}%
-- Security Score: ${analysis.securityScore || 'Unknown'}/100
-- Maintainability Score: ${analysis.maintainabilityScore || 'Unknown'}/100
-- Documentation Score: ${analysis.documentationScore || 'Unknown'}/100
 
-Technology Stack:
-${analysis.techStack?.map((tech: any) => `- ${tech.name} (${tech.type})`).join('\n') || 'No tech stack detected'}
+QUALITY SCORES:
+- Security Score: ${analysis.securityScore || 'N/A'}/100
+- Maintainability Score: ${analysis.maintainabilityScore || 'N/A'}/100
+- Documentation Score: ${analysis.documentationScore || 'N/A'}/100
 
-File Types:
-${analysis.fileTypes?.map((type: any) => `- ${type.name}: ${type.lines.toLocaleString()} lines`).join('\n') || 'No file types available'}
+TECHNOLOGY STACK:
+${analysis.techStack?.map((tech: any) => `- ${tech.name}: ${tech.type} (${tech.confidence} confidence)`).join('\n') || 'No technologies detected'}
 
-Security Issues:
+LANGUAGE DISTRIBUTION:
+${analysis.fileTypes?.map((type: any) => {
+  const total = analysis.fileTypes?.reduce((sum: any, item: any) => sum + item.lines, 0) || 1;
+  const percentage = ((type.lines / total) * 100).toFixed(1);
+  return `- ${type.name}: ${type.lines.toLocaleString()} lines (${percentage}%)`;
+}).join('\n') || 'No file type data available'}
+
+SECURITY VULNERABILITIES:
 ${analysis.vulnerabilities?.length > 0 
-  ? analysis.vulnerabilities.map((vuln: any) => `- ${vuln.severity}: ${vuln.title}`).join('\n')
-  : 'No security vulnerabilities detected'
-}
+  ? analysis.vulnerabilities.map((vuln: any) => `- ${vuln.severity?.toUpperCase()}: ${vuln.title} - ${vuln.description}`).join('\n')
+  : 'No security vulnerabilities detected'}
 
-Top Contributors:
-${analysis.contributors?.slice(0, 3).map((contrib: any) => `- ${contrib.login}: ${contrib.contributions} commits`).join('\n') || 'No contributors data'}
-`
+TOP CONTRIBUTORS:
+${analysis.contributors?.slice(0, 5).map((contrib: any) => `- ${contrib.login}: ${contrib.contributions?.toLocaleString()} commits`).join('\n') || 'No contributor data available'}
 
-    // Build chat history context
-    const historyContext = chatHistory?.length > 0 
-      ? `\n\nRecent conversation:\n${chatHistory.map((msg: any) => `${msg.role === 'user' ? 'User' : 'Assistant'}: ${msg.content}`).join('\n')}`
-      : ''
+INSTRUCTIONS:
+1. Provide accurate, helpful responses based on the repository data above
+2. Reference specific metrics and data when relevant
+3. Offer actionable insights and recommendations
+4. Use a professional but friendly tone
+5. Format responses clearly with markdown when appropriate
+6. If asked about something not covered in the data, acknowledge the limitation
+7. Focus on practical, valuable insights for developers
 
-    // Generate AI response
-    const prompt = `You are an expert software engineer and code analyst. You have access to detailed information about a GitHub repository and its analysis data. Please provide helpful, accurate, and actionable insights based on the user's question.
+Always base your responses on the actual repository data provided above.`
 
-Repository Context:
-${context}${historyContext}
+    // Check if Llama API is configured
+    if (!process.env.LLAMA_API_KEY) {
+      console.warn('LLAMA_API_KEY is not configured, using fallback response')
+      const fallbackReply = generateContextualResponse(message.toLowerCase(), repository, analysis)
+      return NextResponse.json({ reply: fallbackReply })
+    }
 
-User Question: ${message}
+    try {
+      // Build messages array for the LLM
+      const messages = [
+        {
+          role: 'system',
+          content: systemPrompt
+        }
+      ]
 
-Please provide a comprehensive answer that:
-1. Directly addresses the user's question
-2. References specific data from the repository analysis when relevant
-3. Provides actionable insights and recommendations
-4. Uses a friendly but professional tone
-5. Formats the response clearly with bullet points or sections when appropriate
+      // Add chat history for context
+      if (chatHistory && chatHistory.length > 0) {
+        chatHistory.slice(-5).forEach((msg: any) => {
+          messages.push({
+            role: msg.role === 'user' ? 'user' : 'assistant',
+            content: msg.content
+          })
+        })
+      }
 
-Keep your response focused and practical. If you don't have enough information to answer completely, explain what additional information would be helpful.`
+      // Add current user message
+      messages.push({
+        role: 'user',
+        content: message
+      })
 
-    // In a real implementation, you would call an AI service like OpenAI
-    // For now, we'll provide contextual responses based on the question
-    let reply = generateContextualResponse(message.toLowerCase(), repository, analysis)
+      // Use the existing llama-proxy endpoint
+      const payload = {
+        messages,
+        model: 'Llama-4-Maverick-17B-128E-Instruct-FP8',
+        temperature: 0.7,
+        top_p: 0.9,
+        max_completion_tokens: 1000,
+        stream: false
+      }
 
-    return NextResponse.json({ reply })
+      const response = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/llama-proxy`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ payload })
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        console.error('Llama proxy error:', errorData)
+        throw new Error(`Llama API error: ${errorData.error?.detail || errorData.error || response.statusText}`)
+      }
+
+      const data = await response.json()
+      
+      // Extract content from the response
+      let reply = ''
+      if (data.completion_message?.content) {
+        reply = typeof data.completion_message.content === 'string' 
+          ? data.completion_message.content 
+          : data.completion_message.content.text || ''
+      } else if (data.choices?.[0]?.message?.content) {
+        reply = data.choices[0].message.content
+      }
+
+      if (!reply) {
+        throw new Error('Empty response from Llama API')
+      }
+
+      return NextResponse.json({ reply })
+    } catch (llamaError) {
+      console.error('Llama API error:', llamaError)
+      
+      // Fallback to contextual response if Llama fails
+      const fallbackReply = generateContextualResponse(message.toLowerCase(), repository, analysis)
+      return NextResponse.json({ reply: fallbackReply })
+    }
+
   } catch (error) {
     console.error('Chat API error:', error)
-    return NextResponse.json(
-      { error: 'Failed to process chat message' },
-      { status: 500 }
-    )
+    
+    // Fallback to contextual response on any error
+    try {
+      const { message, repository, analysis } = await request.json()
+      const fallbackReply = generateContextualResponse(message.toLowerCase(), repository, analysis)
+      return NextResponse.json({ reply: fallbackReply })
+    } catch {
+      return NextResponse.json(
+        { error: 'Failed to process chat message' },
+        { status: 500 }
+      )
+    }
   }
 }
 

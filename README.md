@@ -45,6 +45,43 @@ A comprehensive GitHub repository analyzer that provides detailed insights, stat
 - Performance optimization suggestions
 - Maintainability assessment
 
+## AI Chat Integration
+
+### Llama Model Configuration
+
+The chat feature uses your existing `llama-api-client` package and `LLAMA_API_KEY` environment variable to provide intelligent responses about repositories.
+
+#### Configuration
+```bash
+LLAMA_API_KEY="your-llama-api-key"
+```
+
+The application uses the existing `/api/llama-proxy` endpoint which:
+- Securely handles your LLAMA_API_KEY on the server side
+- Uses the `llama-api-client` package for API communication
+- Provides fallback responses if the API is unavailable
+- Supports multiple Llama model variants with automatic fallback
+
+### Chat Features
+
+- **Repository-aware conversations**: AI knows about the specific repository being analyzed
+- **Contextual responses**: References actual code metrics, tech stack, and analysis data
+- **Intelligent fallback**: Uses rule-based responses if AI service is unavailable
+- **Conversation history**: Maintains context across multiple messages
+
+### System Prompt
+
+The AI assistant receives comprehensive repository information including:
+- Repository metadata (stars, forks, language, license)
+- Code analysis metrics (lines of code, complexity, test coverage)
+- Quality scores (security, maintainability, documentation)
+- Technology stack and dependencies
+- Language distribution and file types
+- Security vulnerabilities
+- Top contributors
+
+This enables the AI to provide accurate, data-driven insights about any repository.
+
 ## Getting Started
 
 ### Prerequisites

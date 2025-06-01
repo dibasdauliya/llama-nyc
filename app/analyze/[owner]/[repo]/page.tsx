@@ -102,6 +102,7 @@ export default function AnalyzePage() {
   const [showChat, setShowChat] = useState(false)
   const chatEndRef = useRef<HTMLDivElement>(null)
   const [isNearBottom, setIsNearBottom] = useState(false)
+  const [isFloatingMenuOpen, setIsFloatingMenuOpen] = useState(false)
 
   useEffect(() => {
     analyzeRepository()
@@ -1072,7 +1073,7 @@ export default function AnalyzePage() {
         </div>
 
         {/* Chat with Repository */}
-        <div className="bg-white/5 backdrop-blur-sm border border-gray-700 rounded-xl p-6 mt-8">
+        <div data-chat-section className="bg-white/5 backdrop-blur-sm border border-gray-700 rounded-xl p-6 mt-8">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center">
               <Activity className="h-6 w-6 text-blue-400 mr-2" />
@@ -1197,26 +1198,66 @@ export default function AnalyzePage() {
       </div>
       
       {/* Floating AI Analysis Button */}
-      {!aiInsights && !loading && repoData && analysisData && (
-        <button
-          onClick={handleGetAIAnalysis}
-          disabled={generatingInsights}
-          className={`fixed bottom-8 right-8 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-6 py-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2 z-50 ${
-            isNearBottom ? 'opacity-0 pointer-events-none' : 'opacity-100'
-          }`}
-        >
-          {generatingInsights ? (
-            <>
-              <Loader2 className="h-5 w-5 animate-spin" />
-              <span className="font-medium">Generating...</span>
-            </>
-          ) : (
-            <>
-              <Zap className="h-5 w-5" />
-              <span className="font-medium">Get AI Analysis</span>
-            </>
-          )}
-        </button>
+      {!loading && repoData && analysisData && (
+        <div className={`fixed bottom-8 right-8 z-50 transition-all duration-300 ${
+          isNearBottom ? 'opacity-0 pointer-events-none' : 'opacity-100'
+        }`}>
+          {/* Floating Action Menu */}
+          <div className="relative">
+            {/* Menu Options */}
+            <div className={`absolute bottom-16 right-0 space-y-3 transition-all duration-300 ${
+              isFloatingMenuOpen ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'
+            }`}>
+              {/* AI Analysis Option */}
+              {!aiInsights && (
+                <button
+                  onClick={() => {
+                    handleGetAIAnalysis()
+                    setIsFloatingMenuOpen(false)
+                  }}
+                  disabled={generatingInsights}
+                  className="flex items-center space-x-3 bg-purple-600 hover:bg-purple-700 text-white px-4 py-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {generatingInsights ? (
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                  ) : (
+                    <Zap className="h-5 w-5" />
+                  )}
+                  <span className="font-medium whitespace-nowrap">
+                    {generatingInsights ? 'Generating...' : 'AI Analysis'}
+                  </span>
+                </button>
+              )}
+              
+              {/* Chat Option */}
+              <button
+                onClick={() => {
+                  setShowChat(true)
+                  setIsFloatingMenuOpen(false)
+                  // Scroll to chat section
+                  const chatSection = document.querySelector('[data-chat-section]')
+                  if (chatSection) {
+                    chatSection.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                  }
+                }}
+                className="flex items-center space-x-3 bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-200"
+              >
+                <Activity className="h-5 w-5" />
+                <span className="font-medium whitespace-nowrap">Start Chat</span>
+              </button>
+            </div>
+            
+            {/* Main Toggle Button */}
+            <button
+              onClick={() => setIsFloatingMenuOpen(!isFloatingMenuOpen)}
+              className={`bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white p-4 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center ${
+                isFloatingMenuOpen ? 'rotate-45' : 'rotate-0'
+              }`}
+            >
+              <Zap className="h-6 w-6" />
+            </button>
+          </div>
+        </div>
       )}
     </div>
   )

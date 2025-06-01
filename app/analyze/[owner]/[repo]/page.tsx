@@ -91,6 +91,17 @@ export default function AnalyzePage() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const aiInsightsRef = useRef<HTMLDivElement>(null)
+  const [chatMessages, setChatMessages] = useState<Array<{
+    id: string
+    role: 'user' | 'assistant'
+    content: string
+    timestamp: Date
+  }>>([])
+  const [chatInput, setChatInput] = useState('')
+  const [isChatLoading, setIsChatLoading] = useState(false)
+  const [showChat, setShowChat] = useState(false)
+  const chatEndRef = useRef<HTMLDivElement>(null)
+  const [isNearBottom, setIsNearBottom] = useState(false)
 
   useEffect(() => {
     analyzeRepository()
@@ -120,6 +131,37 @@ export default function AnalyzePage() {
       document.removeEventListener('click', handleClickOutside)
     }
   }, [isDropdownOpen])
+
+  // Auto-scroll chat to bottom
+  useEffect(() => {
+    if (chatEndRef.current) {
+      chatEndRef.current.scrollIntoView({ behavior: 'smooth' })
+    }
+  }, [chatMessages])
+
+  // Scroll detection for floating button
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollTop = window.pageYOffset || document.documentElement.scrollTop
+      const windowHeight = window.innerHeight
+      const documentHeight = document.documentElement.scrollHeight
+      
+      // Consider "near bottom" when within 200px of the bottom
+      const threshold = 200
+      const isNear = scrollTop + windowHeight >= documentHeight - threshold
+      
+      setIsNearBottom(isNear)
+    }
+
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    
+    // Check initial position
+    handleScroll()
+    
+    return () => {
+      window.removeEventListener('scroll', handleScroll)
+    }
+  }, [])
 
   const analyzeRepository = useCallback(async () => {
     try {
@@ -250,6 +292,63 @@ export default function AnalyzePage() {
         generateAIInsights()
       }, 500)
     }
+  }
+
+  const sendChatMessage = useCallback(async (message: string) => {
+    if (!message.trim() || !repoData || !analysisData) return
+
+    const userMessage = {
+      id: `user-${Date.now()}`,
+      role: 'user' as const,
+      content: message.trim(),
+      timestamp: new Date()
+    }
+
+    setChatMessages(prev => [...prev, userMessage])
+    setChatInput('')
+    setIsChatLoading(true)
+
+    try {
+      const response = await fetch('/api/ai/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: message.trim(),
+          repository: repoData,
+          analysis: analysisData,
+          chatHistory: chatMessages.slice(-5) // Send last 5 messages for context
+        })
+      })
+
+      if (response.ok) {
+        const { reply } = await response.json()
+        const assistantMessage = {
+          id: `assistant-${Date.now()}`,
+          role: 'assistant' as const,
+          content: reply,
+          timestamp: new Date()
+        }
+        setChatMessages(prev => [...prev, assistantMessage])
+      } else {
+        throw new Error('Failed to get response')
+      }
+    } catch (error) {
+      console.error('Chat error:', error)
+      const errorMessage = {
+        id: `error-${Date.now()}`,
+        role: 'assistant' as const,
+        content: 'Sorry, I encountered an error. Please try again.',
+        timestamp: new Date()
+      }
+      setChatMessages(prev => [...prev, errorMessage])
+    } finally {
+      setIsChatLoading(false)
+    }
+  }, [repoData, analysisData, chatMessages])
+
+  const handleChatSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    sendChatMessage(chatInput)
   }
 
   if (loading) {
@@ -971,6 +1070,130 @@ export default function AnalyzePage() {
             </div>
           )}
         </div>
+
+        {/* Chat with Repository */}
+        <div className="bg-white/5 backdrop-blur-sm border border-gray-700 rounded-xl p-6 mt-8">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center">
+              <Activity className="h-6 w-6 text-blue-400 mr-2" />
+              <h3 className="text-xl font-semibold text-white">Chat About This Repository</h3>
+            </div>
+            <button
+              onClick={() => setShowChat(!showChat)}
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center"
+            >
+              <Activity className="h-4 w-4 mr-2" />
+              {showChat ? 'Hide Chat' : 'Start Chat'}
+            </button>
+          </div>
+
+          {showChat ? (
+            <div className="space-y-4">
+              {/* Chat Messages */}
+              <div className="h-96 overflow-y-auto bg-gray-800/50 rounded-lg p-4 space-y-4 border border-gray-600">
+                {chatMessages.length === 0 ? (
+                  <div className="text-center py-8 grid place-items-center h-full">
+                    <Activity className="h-12 w-12 text-blue-400 mx-auto mb-2" />
+                    <p className="text-gray-300 mb-2 max-w-lg">
+                      Ask me anything about this repository! I can help you understand the code structure, 
+                      architecture patterns, dependencies, or suggest improvements.
+                    </p>
+                    <div className="flex flex-wrap gap-2 justify-center">
+                      <button
+                        onClick={() => sendChatMessage("What are the main technologies used in this project?")}
+                        className="text-sm bg-blue-600/20 text-blue-300 px-3 py-1 rounded-full hover:bg-blue-600/30 transition-colors"
+                      >
+                        Main technologies?
+                      </button>
+                      <button
+                        onClick={() => sendChatMessage("What could be improved in this codebase?")}
+                        className="text-sm bg-green-600/20 text-green-300 px-3 py-1 rounded-full hover:bg-green-600/30 transition-colors"
+                      >
+                        Improvement suggestions?
+                      </button>
+                      <button
+                        onClick={() => sendChatMessage("How is the code quality and maintainability?")}
+                        className="text-sm bg-purple-600/20 text-purple-300 px-3 py-1 rounded-full hover:bg-purple-600/30 transition-colors"
+                      >
+                        Code quality?
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  chatMessages.map((message) => (
+                    <div
+                      key={message.id}
+                      className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                    >
+                      <div
+                        className={`max-w-[80%] p-3 rounded-lg ${
+                          message.role === 'user'
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-gray-700 text-gray-200'
+                        }`}
+                      >
+                        <div className="text-sm mb-1">
+                          {message.role === 'user' ? 'You' : 'AI Assistant'}
+                        </div>
+                        <div className="prose prose-sm prose-invert max-w-none">
+                          <ReactMarkdown>{message.content}</ReactMarkdown>
+                        </div>
+                        <div className="text-xs opacity-70 mt-2">
+                          {message.timestamp.toLocaleTimeString()}
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+                
+                {isChatLoading && (
+                  <div className="flex justify-start">
+                    <div className="bg-gray-700 text-gray-200 p-3 rounded-lg">
+                      <div className="flex items-center">
+                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                        <span>AI is thinking...</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
+                <div ref={chatEndRef} />
+              </div>
+
+              {/* Chat Input */}
+              <form onSubmit={handleChatSubmit} className="flex gap-2">
+                <input
+                  type="text"
+                  value={chatInput}
+                  onChange={(e) => setChatInput(e.target.value)}
+                  placeholder="Ask anything about this repository..."
+                  className="flex-1 bg-gray-800 border border-gray-600 rounded-lg px-4 py-2 bg-white placeholder-gray-400 focus:outline-none focus:border-blue-500"
+                  disabled={isChatLoading}
+                />
+                <button
+                  type="submit"
+                  disabled={!chatInput.trim() || isChatLoading}
+                  className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Send
+                </button>
+              </form>
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <Activity className="h-12 w-12 text-blue-400 mx-auto mb-4" />
+              <p className="text-gray-300 mb-4 max-w-lg text-center mx-auto">
+                Have questions about this repository? Start a conversation with our AI assistant to learn more about the code structure, patterns, and get personalized recommendations.
+              </p>
+              <button
+                onClick={() => setShowChat(true)}
+                className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Start Chatting
+              </button>
+            </div>
+          )}
+        </div>
       </div>
       
       {/* Floating AI Analysis Button */}
@@ -978,7 +1201,9 @@ export default function AnalyzePage() {
         <button
           onClick={handleGetAIAnalysis}
           disabled={generatingInsights}
-          className="fixed bottom-8 right-8 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-6 py-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2 z-50"
+          className={`fixed bottom-8 right-8 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-6 py-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2 z-50 ${
+            isNearBottom ? 'opacity-0 pointer-events-none' : 'opacity-100'
+          }`}
         >
           {generatingInsights ? (
             <>

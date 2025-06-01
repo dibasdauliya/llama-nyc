@@ -1,4 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '../../auth/[...nextauth]/route'
+import { prisma } from '../../../../lib/db'
 
 // Function to call Llama API
 async function generateLlamaInsights(context: string): Promise<string> {
@@ -183,20 +186,9 @@ This ${repository.language} project demonstrates ${
 `
 }
 
-export async function POST(request: NextRequest) {
-  try {
-    const { repository, analysis } = await request.json()
-
-    if (!repository || !analysis) {
-      return NextResponse.json(
-        { error: 'Repository and analysis data are required' },
-        { status: 400 }
-      )
-    }
-
-    // Prepare context for AI analysis
-    const context = `
-Analyze this GitHub repository and provide detailed insights:
+// Function to generate prompt for AI analysis
+function generatePrompt(repository: any, analysis: any): string {
+  return `Analyze this GitHub repository and provide detailed insights:
 
 Repository: ${repository.name}
 Description: ${repository.description || 'No description'}
@@ -233,37 +225,150 @@ Please provide a comprehensive analysis covering:
 9. Scalability considerations
 10. Future development recommendations
 
-Format your response using markdown with emojis for better readability.
-`
+Format your response using markdown with emojis for better readability.`
+}
 
-    let insights: string
+async function saveAIInsightsToDatabase(repositoryFullName: string, insights: string) {
+  try {
+    // Find the repository
+    const repository = await prisma.repository.findUnique({
+      where: { fullName: repositoryFullName }
+    })
 
+    if (!repository) {
+      console.error(`Repository ${repositoryFullName} not found in database`)
+      return null
+    }
+
+    // Check if analysis already exists for this repository
+    const existingAnalysis = await prisma.repositoryAnalysis.findFirst({
+      where: { repositoryId: repository.id }
+    })
+
+    let analysis
+    if (existingAnalysis) {
+      // Update existing analysis with AI insights
+      analysis = await prisma.repositoryAnalysis.update({
+        where: { id: existingAnalysis.id },
+        data: {
+          aiInsights: insights,
+          aiInsightsGeneratedAt: new Date(),
+          updatedAt: new Date()
+        }
+      })
+    } else {
+      // Create new analysis with AI insights and default values
+      analysis = await prisma.repositoryAnalysis.create({
+        data: {
+          repositoryId: repository.id,
+          aiInsights: insights,
+          aiInsightsGeneratedAt: new Date(),
+          // Set default values for required fields
+          securityScore: 75,
+          maintainabilityScore: 75,
+          documentationScore: 75
+        }
+      })
+    }
+
+    return analysis
+  } catch (error) {
+    console.error('Error saving AI insights to database:', error)
+    return null
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions)
+    const { repository, analysis } = await request.json()
+    
+    if (!repository || !analysis) {
+      return NextResponse.json(
+        { error: 'Repository and analysis data are required' },
+        { status: 400 }
+      )
+    }
+
+    let insights = ''
+    
+    // Try different AI services in order of preference
     try {
-      // Try to use real Llama API first
-      insights = await generateLlamaInsights(context)
-      console.log('✅ Generated insights using Llama API')
-    } catch (llamaError) {
-      console.warn('⚠️ Llama API failed, trying OpenAI-compatible endpoint:', llamaError)
-      
+      // First, try Llama API if available
+      if (process.env.LLAMA_API_KEY) {
+        const llamaResponse = await fetch('https://api.llama-api.com/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${process.env.LLAMA_API_KEY}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: 'llama3.1-70b',
+            messages: [{
+              role: 'user',
+              content: generatePrompt(repository, analysis)
+            }],
+            max_tokens: 1000,
+            temperature: 0.7
+          })
+        })
+
+        if (llamaResponse.ok) {
+          const llamaData = await llamaResponse.json()
+          insights = llamaData.choices[0]?.message?.content || ''
+        }
+      }
+    } catch (error) {
+      console.log('Llama API not available, trying OpenAI...')
+    }
+
+    // Fallback to OpenAI-compatible API
+    if (!insights && process.env.OPENAI_API_KEY) {
       try {
-        // Fallback to OpenAI-compatible endpoint
-        insights = await generateOpenAICompatibleInsights(context)
-        console.log('✅ Generated insights using OpenAI-compatible API')
-      } catch (openAIError) {
-        console.warn('⚠️ All AI APIs failed, using mock insights:', openAIError)
-        
-        // Final fallback to mock insights
-        insights = generateMockInsights(repository, analysis)
-        console.log('✅ Generated mock insights as fallback')
+        const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: 'gpt-3.5-turbo',
+            messages: [{
+              role: 'user',
+              content: generatePrompt(repository, analysis)
+            }],
+            max_tokens: 1000,
+            temperature: 0.7
+          })
+        })
+
+        if (openaiResponse.ok) {
+          const openaiData = await openaiResponse.json()
+          insights = openaiData.choices[0]?.message?.content || ''
+        }
+      } catch (error) {
+        console.log('OpenAI API not available, using mock data...')
       }
     }
 
+    // Ultimate fallback: generated insights
+    if (!insights) {
+      insights = generateMockInsights(repository, analysis)
+    }
+
+    // Save insights to database
+    if (session?.user?.id) {
+      await saveAIInsightsToDatabase(repository.full_name || `${repository.owner?.login || repository.owner}/${repository.name}`, insights)
+    }
+    
     return NextResponse.json({ insights })
-  } catch (error: any) {
-    console.error('Error generating AI insights:', error)
-    return NextResponse.json(
-      { error: 'Failed to generate AI insights' },
-      { status: 500 }
-    )
+  } catch (error) {
+    console.error('AI insights error:', error)
+    
+    // Return mock insights as fallback
+    const { repository, analysis } = await request.json().catch(() => ({}))
+    const fallbackInsights = generateMockInsights(repository || {}, analysis || {})
+    
+    return NextResponse.json({ insights: fallbackInsights })
   }
 } 

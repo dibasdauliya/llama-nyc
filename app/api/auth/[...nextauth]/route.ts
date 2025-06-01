@@ -2,7 +2,7 @@ import NextAuth, { AuthOptions } from "next-auth"
 import GoogleProvider from "next-auth/providers/google"
 import GitHubProvider from "next-auth/providers/github"
 import { PrismaAdapter } from "@next-auth/prisma-adapter"
-import { prisma } from "@/lib/prisma"
+import { prisma } from "../../../../lib/db"
 import { google } from "googleapis"
 
 export const authOptions: AuthOptions = {
@@ -169,48 +169,24 @@ export const authOptions: AuthOptions = {
       if (!user.email) return false;
       
       try {
-        // Check if user exists and has a subscription
+        // Check if user exists in database
         const existingUser = await prisma.user.findUnique({
-          where: { email: user.email },
-          include: { subscriptions: true }
+          where: { email: user.email }
         });
 
-        // If user exists but has no subscription, create one
-        if (existingUser && existingUser.subscriptions.length === 0) {
-          await prisma.subscription.create({
-            data: {
-              userId: existingUser.id,
-              type: 'FREE',
-              status: 'ACTIVE',
-              interviewsLimit: 3,
-            }
-          });
-        }
-        // Note: If user doesn't exist, PrismaAdapter will create them
-        // We'll handle subscription creation in the events callback
+        console.log('SignIn callback - user exists:', !!existingUser);
         
         return true;
       } catch (error) {
         console.error('Error in signIn callback:', error);
-        return true; // Still allow sign in even if subscription fails
+        return true; // Still allow sign in even if check fails
       }
     }
   },
   events: {
     async createUser({ user }) {
       // This event fires after a new user is created
-      try {
-        await prisma.subscription.create({
-          data: {
-            userId: user.id,
-            type: 'FREE',
-            status: 'ACTIVE',
-            interviewsLimit: 3,
-          }
-        });
-      } catch (error) {
-        console.error('Error creating subscription for new user:', error);
-      }
+      console.log('CreateUser event fired for:', user.email);
     }
   },
   pages: {

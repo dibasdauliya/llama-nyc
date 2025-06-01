@@ -1,6 +1,5 @@
 generator client {
   provider = "prisma-client-js"
-  output   = "../lib/generated/prisma"
 }
 
 datasource db {
@@ -14,14 +13,15 @@ model User {
   emailVerified DateTime?
   name          String?
   image         String?
+  githubUsername String?
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
   accounts      Account[]
-  interviews    Interview[]
   sessions      Session[]
-  subscriptions Subscription[]
+  repoViews     RepositoryView[]
 
   @@index([email])
+  @@index([githubUsername])
 }
 
 model Account {
@@ -53,112 +53,76 @@ model Session {
   @@index([userId])
 }
 
-model Interview {
-  id             String              @id @default(cuid())
-  userId         String
-  type           InterviewType
-  status         InterviewStatus     @default(SCHEDULED)
-  jobTitle       String?
-  company        String?
-  industry       String?
-  jobDescription String?
-  visaType       String?
-  resumeUrl      String?
-  conversationId String?             @unique
-  personaId      String?
-  scheduledAt    DateTime?
-  startedAt      DateTime?
-  endedAt        DateTime?
-  duration       Int?
-  createdAt      DateTime            @default(now())
-  updatedAt      DateTime            @updatedAt
-  user           User                @relation(fields: [userId], references: [id], onDelete: Cascade)
-  feedback       InterviewFeedback?
-  questions      InterviewQuestion[]
+model Repository {
+  id               String           @id @default(cuid())
+  owner            String
+  name             String
+  fullName         String           @unique // owner/name
+  description      String?
+  language         String?
+  stars            Int              @default(0)
+  forks            Int              @default(0)
+  watchers         Int              @default(0)
+  size             Int              @default(0)
+  openIssues       Int              @default(0)
+  isPrivate        Boolean          @default(false)
+  isArchived       Boolean          @default(false)
+  htmlUrl          String
+  cloneUrl         String
+  defaultBranch    String           @default("main")
+  topics           String[]
+  license          String?
+  hasWiki          Boolean          @default(false)
+  hasPages         Boolean          @default(false)
+  hasProjects      Boolean          @default(false)
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  lastSyncAt       DateTime         @default(now())
+  views            RepositoryView[]
+  analyses         RepositoryAnalysis[]
+
+  @@index([owner])
+  @@index([fullName])
+  @@index([language])
+  @@index([isPrivate])
+}
+
+model RepositoryView {
+  id           String     @id @default(cuid())
+  userId       String?
+  repositoryId String
+  ipAddress    String?
+  userAgent    String?
+  viewedAt     DateTime   @default(now())
+  user         User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
+  repository   Repository @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
 
   @@index([userId])
-  @@index([type])
-  @@index([status])
+  @@index([repositoryId])
+  @@index([viewedAt])
+  @@index([ipAddress])
 }
 
-model InterviewFeedback {
-  id                 String    @id @default(cuid())
-  interviewId        String    @unique
-  overallScore       Int?
-  communicationScore Int?
-  technicalScore     Int?
-  confidenceScore    Int?
-  strengths          String[]
-  improvements       String[]
-  detailedFeedback   String?
-  aiAnalysis         Json?
-  createdAt          DateTime  @default(now())
-  updatedAt          DateTime  @updatedAt
-  interview          Interview @relation(fields: [interviewId], references: [id], onDelete: Cascade)
-}
+model RepositoryAnalysis {
+  id                    String     @id @default(cuid())
+  repositoryId          String
+  totalLines            Int?
+  totalFiles            Int?
+  avgComplexity         Float?
+  testCoverage          Int?
+  securityScore         Int?
+  maintainabilityScore  Int?
+  documentationScore    Int?
+  vulnerabilities       Json?      // Array of vulnerability objects
+  contributors          Json?      // Array of contributor objects
+  commits               Json?      // Array of commit activity data
+  fileTypes             Json?      // Array of file type distribution
+  aiInsights            String?
+  aiInsightsGeneratedAt DateTime?
+  createdAt             DateTime   @default(now())
+  updatedAt             DateTime   @updatedAt
+  repository            Repository @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
 
-model InterviewQuestion {
-  id           String    @id @default(cuid())
-  interviewId  String
-  question     String
-  answer       String?
-  askedAt      DateTime
-  answeredAt   DateTime?
-  responseTime Int?
-  score        Int?
-  feedback     String?
-  createdAt    DateTime  @default(now())
-  interview    Interview @relation(fields: [interviewId], references: [id], onDelete: Cascade)
-
-  @@index([interviewId])
-}
-
-model Subscription {
-  id                   String             @id @default(cuid())
-  userId               String
-  type                 SubscriptionType
-  status               SubscriptionStatus @default(ACTIVE)
-  interviewsLimit      Int                @default(10)
-  interviewsUsed       Int                @default(0)
-  stripeCustomerId     String?            @unique
-  stripeSubscriptionId String?            @unique
-  startDate            DateTime           @default(now())
-  endDate              DateTime?
-  cancelledAt          DateTime?
-  createdAt            DateTime           @default(now())
-  updatedAt            DateTime           @updatedAt
-  user                 User               @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@index([status])
-}
-
-enum InterviewType {
-  VISA_F1
-  VISA_B2
-  VISA_H1B
-  JOB_HR
-  JOB_TECHNICAL
-}
-
-enum InterviewStatus {
-  SCHEDULED
-  IN_PROGRESS
-  COMPLETED
-  CANCELLED
-  FAILED
-}
-
-enum SubscriptionType {
-  FREE
-  BASIC
-  PREMIUM
-  ENTERPRISE
-}
-
-enum SubscriptionStatus {
-  ACTIVE
-  CANCELLED
-  EXPIRED
-  SUSPENDED
+  @@index([repositoryId])
+  @@index([createdAt])
 }

@@ -146,10 +146,12 @@ export default function HomePage() {
       <nav className="border-b border-gray-800 bg-black/20 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
-            <div className="flex items-center">
-              <Github className="h-8 w-8 text-white mr-3" />
-              <span className="text-xl font-bold text-white">GitHub Analyzer</span>
+            <div className="flex items-center space-x-3">
+            <div className="p-2 bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg">
+              <Github className="h-6 w-6 text-white" />
             </div>
+            <span className="text-xl font-bold text-white">GitHub Analyzer</span>
+          </div>
             <div className="flex items-center space-x-4">
               {session && session.user ? (
                 <div className="flex items-center space-x-2">
@@ -158,7 +160,12 @@ export default function HomePage() {
                     alt={session.user.name || 'User'} 
                     className="w-8 h-8 rounded-full"
                   />
-                  <span className="text-gray-300">{session.user.name}</span>
+                  <Link 
+                    href="/dashboard" 
+                    className="text-gray-300 hover:text-white transition-colors px-2 py-1 rounded"
+                  >
+                    Go to Dashboard
+                  </Link>
                   <button
                     onClick={() => signOut()}
                     className="text-sm text-gray-400 hover:text-white transition-colors px-2 py-1 rounded"

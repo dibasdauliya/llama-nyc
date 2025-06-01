@@ -10,58 +10,58 @@ import ReactMarkdown from 'react-markdown'
 
 interface RepoData {
   name: string
-  description: string
-  stars: number
-  forks: number
-  watchers: number
-  language: string
-  languages: { [key: string]: number }
+  description?: string | null
+  stars?: number
+  forks?: number
+  watchers?: number
+  language?: string | null
+  languages?: { [key: string]: number }
   created_at: string
   updated_at: string
-  size: number
-  open_issues: number
-  license: string
+  size?: number
+  open_issues?: number
+  license?: string | null
   default_branch: string
   private: boolean
   html_url: string
   clone_url: string
-  topics: string[]
-  has_wiki: boolean
-  has_pages: boolean
-  has_projects: boolean
-  archived: boolean
-  disabled: boolean
-  visibility: string
+  topics?: string[]
+  has_wiki?: boolean
+  has_pages?: boolean
+  has_projects?: boolean
+  archived?: boolean
+  disabled?: boolean
+  visibility?: string
 }
 
 interface AnalysisData {
   codeMetrics: {
-    totalLines: number
-    totalFiles: number
-    avgComplexity: number
-    testCoverage: number
+    totalLines?: number
+    totalFiles?: number
+    avgComplexity?: number
+    testCoverage?: number
   }
-  securityScore: number
-  maintainabilityScore: number
-  documentationScore: number
-  commits: Array<{
+  securityScore?: number
+  maintainabilityScore?: number
+  documentationScore?: number
+  commits?: Array<{
     date: string
     count: number
   }>
-  contributors: Array<{
-    login: string
-    contributions: number
-    avatar_url: string
+  contributors?: Array<{
+    login?: string
+    contributions?: number
+    avatar_url?: string
   }>
-  fileTypes: Array<{
+  fileTypes?: Array<{
     name: string
     count: number
     lines: number
   }>
-  vulnerabilities: Array<{
-    severity: 'low' | 'medium' | 'high' | 'critical'
-    title: string
-    description: string
+  vulnerabilities?: Array<{
+    severity?: 'low' | 'medium' | 'high' | 'critical'
+    title?: string
+    description?: string
   }>
 }
 
@@ -370,7 +370,12 @@ export default function AnalyzePage() {
                     alt={session.user?.name || 'User'} 
                     className="w-8 h-8 rounded-full"
                   />
-                  <span className="text-sm text-gray-300">{session.user?.name}</span>
+                  <Link 
+                    href="/dashboard" 
+                    className="text-sm text-gray-300 hover:text-white transition-colors px-2 py-1 rounded"
+                  >
+                    Go to Dashboard
+                  </Link>
                   <button
                     onClick={() => signOut()}
                     className="text-sm text-gray-400 hover:text-white transition-colors px-2 py-1 rounded"
@@ -483,23 +488,23 @@ export default function AnalyzePage() {
               <div className="flex flex-wrap gap-4 mb-4">
                 <div className="flex items-center text-gray-300">
                   <Star className="h-4 w-4 mr-1" />
-                  {repoData.stars.toLocaleString()} stars
+                  {(repoData.stars || 0).toLocaleString()} stars
                 </div>
                 <div className="flex items-center text-gray-300">
                   <GitFork className="h-4 w-4 mr-1" />
-                  {repoData.forks.toLocaleString()} forks
+                  {(repoData.forks || 0).toLocaleString()} forks
                 </div>
                 <div className="flex items-center text-gray-300">
                   <Eye className="h-4 w-4 mr-1" />
-                  {repoData.watchers.toLocaleString()} watchers
+                  {(repoData.watchers || 0).toLocaleString()} watchers
                 </div>
                 <div className="flex items-center text-gray-300">
                   <Code className="h-4 w-4 mr-1" />
-                  {repoData.language}
+                  {repoData.language || 'Unknown'}
                 </div>
               </div>
               
-              {repoData.topics.length > 0 && (
+              {(repoData.topics && repoData.topics.length > 0) && (
                 <div className="flex flex-wrap gap-2">
                   {repoData.topics.map((topic) => (
                     <span key={topic} className="bg-purple-600/20 text-purple-300 px-2 py-1 rounded-full text-sm">
@@ -520,14 +525,14 @@ export default function AnalyzePage() {
                 <Shield className="h-6 w-6 text-red-400 mr-2" />
                 <h3 className="text-lg font-semibold text-white">Security Score</h3>
               </div>
-              <span className={`text-2xl font-bold ${getScoreColor(analysisData.securityScore)}`}>
-                {analysisData.securityScore}/100
+              <span className={`text-2xl font-bold ${getScoreColor(analysisData.securityScore || 0)}`}>
+                {analysisData.securityScore || 0}/100
               </span>
             </div>
-            <div className={`w-full h-2 rounded-full ${getScoreBgColor(analysisData.securityScore)}`}>
+            <div className={`w-full h-2 rounded-full ${getScoreBgColor(analysisData.securityScore || 0)}`}>
               <div 
                 className="h-2 rounded-full bg-gradient-to-r from-red-600 to-green-600" 
-                style={{ width: `${analysisData.securityScore}%` }}
+                style={{ width: `${analysisData.securityScore || 0}%` }}
               ></div>
             </div>
           </div>
@@ -538,14 +543,14 @@ export default function AnalyzePage() {
                 <Activity className="h-6 w-6 text-blue-400 mr-2" />
                 <h3 className="text-lg font-semibold text-white">Maintainability</h3>
               </div>
-              <span className={`text-2xl font-bold ${getScoreColor(analysisData.maintainabilityScore)}`}>
-                {analysisData.maintainabilityScore}/100
+              <span className={`text-2xl font-bold ${getScoreColor(analysisData.maintainabilityScore || 0)}`}>
+                {analysisData.maintainabilityScore || 0}/100
               </span>
             </div>
-            <div className={`w-full h-2 rounded-full ${getScoreBgColor(analysisData.maintainabilityScore)}`}>
+            <div className={`w-full h-2 rounded-full ${getScoreBgColor(analysisData.maintainabilityScore || 0)}`}>
               <div 
                 className="h-2 rounded-full bg-gradient-to-r from-red-600 to-green-600" 
-                style={{ width: `${analysisData.maintainabilityScore}%` }}
+                style={{ width: `${analysisData.maintainabilityScore || 0}%` }}
               ></div>
             </div>
           </div>
@@ -556,14 +561,14 @@ export default function AnalyzePage() {
                 <FileText className="h-6 w-6 text-green-400 mr-2" />
                 <h3 className="text-lg font-semibold text-white">Documentation</h3>
               </div>
-              <span className={`text-2xl font-bold ${getScoreColor(analysisData.documentationScore)}`}>
-                {analysisData.documentationScore}/100
+              <span className={`text-2xl font-bold ${getScoreColor(analysisData.documentationScore || 0)}`}>
+                {analysisData.documentationScore || 0}/100
               </span>
             </div>
-            <div className={`w-full h-2 rounded-full ${getScoreBgColor(analysisData.documentationScore)}`}>
+            <div className={`w-full h-2 rounded-full ${getScoreBgColor(analysisData.documentationScore || 0)}`}>
               <div 
                 className="h-2 rounded-full bg-gradient-to-r from-red-600 to-green-600" 
-                style={{ width: `${analysisData.documentationScore}%` }}
+                style={{ width: `${analysisData.documentationScore || 0}%` }}
               ></div>
             </div>
           </div>
@@ -573,25 +578,25 @@ export default function AnalyzePage() {
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <div className="bg-white/5 backdrop-blur-sm border border-gray-700 rounded-xl p-6 text-center">
             <Code className="h-8 w-8 text-purple-400 mx-auto mb-2" />
-            <div className="text-2xl font-bold text-white">{analysisData.codeMetrics.totalLines.toLocaleString()}</div>
+            <div className="text-2xl font-bold text-white">{(analysisData.codeMetrics.totalLines || 0).toLocaleString()}</div>
             <div className="text-gray-300">Lines of Code</div>
           </div>
           
           <div className="bg-white/5 backdrop-blur-sm border border-gray-700 rounded-xl p-6 text-center">
             <FileText className="h-8 w-8 text-blue-400 mx-auto mb-2" />
-            <div className="text-2xl font-bold text-white">{analysisData.codeMetrics.totalFiles.toLocaleString()}</div>
+            <div className="text-2xl font-bold text-white">{(analysisData.codeMetrics.totalFiles || 0).toLocaleString()}</div>
             <div className="text-gray-300">Total Files</div>
           </div>
           
           <div className="bg-white/5 backdrop-blur-sm border border-gray-700 rounded-xl p-6 text-center">
             <BarChart3 className="h-8 w-8 text-yellow-400 mx-auto mb-2" />
-            <div className="text-2xl font-bold text-white">{analysisData.codeMetrics.avgComplexity.toFixed(1)}</div>
+            <div className="text-2xl font-bold text-white">{(analysisData.codeMetrics.avgComplexity || 0).toFixed(1)}</div>
             <div className="text-gray-300">Avg Complexity</div>
           </div>
           
           <div className="bg-white/5 backdrop-blur-sm border border-gray-700 rounded-xl p-6 text-center">
             <CheckCircle className="h-8 w-8 text-green-400 mx-auto mb-2" />
-            <div className="text-2xl font-bold text-white">{analysisData.codeMetrics.testCoverage}%</div>
+            <div className="text-2xl font-bold text-white">{analysisData.codeMetrics.testCoverage || 0}%</div>
             <div className="text-gray-300">Test Coverage</div>
           </div>
         </div>
@@ -605,7 +610,7 @@ export default function AnalyzePage() {
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
-                    data={analysisData.fileTypes}
+                    data={analysisData.fileTypes || []}
                     cx="50%"
                     cy="50%"
                     labelLine={false}
@@ -614,7 +619,7 @@ export default function AnalyzePage() {
                     fill="#8884d8"
                     dataKey="lines"
                   >
-                    {analysisData.fileTypes.map((entry, index) => (
+                    {(analysisData.fileTypes || []).map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
@@ -629,7 +634,7 @@ export default function AnalyzePage() {
             <h3 className="text-xl font-semibold text-white mb-4">Commit Activity (Last 30 Days)</h3>
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={analysisData.commits}>
+                <LineChart data={analysisData.commits || []}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
                   <XAxis dataKey="date" stroke="#9CA3AF" />
                   <YAxis stroke="#9CA3AF" />
@@ -653,25 +658,25 @@ export default function AnalyzePage() {
           <div className="bg-white/5 backdrop-blur-sm border border-gray-700 rounded-xl p-6">
             <h3 className="text-xl font-semibold text-white mb-4">Top Contributors</h3>
             <div className="space-y-3">
-              {analysisData.contributors.slice(0, 5).map((contributor) => (
+              {(analysisData.contributors || []).slice(0, 5).map((contributor) => (
                 <div key={contributor.login} className="flex items-center justify-between">
                   <div className="flex items-center">
                     <img 
-                      src={contributor.avatar_url} 
-                      alt={contributor.login}
+                      src={contributor.avatar_url || '/default-avatar.png'} 
+                      alt={contributor.login || 'Contributor'}
                       className="w-8 h-8 rounded-full mr-3"
                     />
                     <a 
-                      href={`https://github.com/${contributor.login}`}
+                      href={`https://github.com/${contributor.login || ''}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-blue- hover:text-blue-300 underline transition-colors flex items-center group"
                     >
-                      <span className="mr-1">{contributor.login}</span>
+                      <span className="mr-1">{contributor.login || 'Unknown'}</span>
                       <ExternalLink className="h-3 w-3 opacity-70 group-hover:opacity-100 transition-opacity" />
                     </a>
                   </div>
-                  <span className="text-gray-300">{contributor.contributions} commits</span>
+                  <span className="text-gray-300">{contributor.contributions || 0} commits</span>
                 </div>
               ))}
             </div>
@@ -681,13 +686,13 @@ export default function AnalyzePage() {
           <div className="bg-white/5 backdrop-blur-sm border border-gray-700 rounded-xl p-6">
             <h3 className="text-xl font-semibold text-white mb-4">Security Issues</h3>
             <div className="space-y-3">
-              {analysisData.vulnerabilities.length === 0 ? (
+              {(!analysisData.vulnerabilities || analysisData.vulnerabilities.length === 0) ? (
                 <div className="text-center py-4">
                   <CheckCircle className="h-12 w-12 text-green-400 mx-auto mb-2" />
                   <p className="text-gray-300">No security vulnerabilities detected</p>
                 </div>
               ) : (
-                analysisData.vulnerabilities.slice(0, 5).map((vuln, index) => (
+                (analysisData.vulnerabilities || []).slice(0, 5).map((vuln, index) => (
                   <div key={index} className="flex items-start space-x-3">
                     <AlertTriangle className={`h-5 w-5 mt-1 ${
                       vuln.severity === 'critical' ? 'text-red-500' :
@@ -696,16 +701,16 @@ export default function AnalyzePage() {
                     }`} />
                     <div className="flex-1">
                       <div className="flex items-center space-x-2">
-                        <h4 className="text-white font-medium">{vuln.title}</h4>
+                        <h4 className="text-white font-medium">{vuln.title || 'Security Issue'}</h4>
                         <span className={`text-xs px-2 py-1 rounded ${
                           vuln.severity === 'critical' ? 'bg-red-500/20 text-red-400' :
                           vuln.severity === 'high' ? 'bg-orange-500/20 text-orange-400' :
                           vuln.severity === 'medium' ? 'bg-yellow-500/20 text-yellow-400' : 'bg-blue-500/20 text-blue-400'
                         }`}>
-                          {vuln.severity}
+                          {vuln.severity || 'unknown'}
                         </span>
                       </div>
-                      <p className="text-gray-300 text-sm">{vuln.description}</p>
+                      <p className="text-gray-300 text-sm">{vuln.description || 'No description available'}</p>
                     </div>
                   </div>
                 ))

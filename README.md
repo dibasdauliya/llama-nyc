@@ -57,7 +57,7 @@ A comprehensive GitHub repository analyzer that provides detailed insights, stat
 
 1. Clone the repository
 ```bash
-git clone <repository-url>
+git clone https://github.com/dibasdauliya/llama-nyc
 cd github-project-analyzer
 ```
 

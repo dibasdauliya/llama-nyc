@@ -464,7 +464,7 @@ export default function HomePage() {
           <div className="flex justify-center items-center gap-4 text-sm text-gray-400">
             <span className="flex items-center">
               <Users className="h-4 w-4 mr-1" />
-              50k+ repos analyzed
+              Free & open source
             </span>
             <span className="flex items-center">
               <FileText className="h-4 w-4 mr-1" />

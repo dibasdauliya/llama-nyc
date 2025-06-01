@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { Octokit } from '@octokit/rest'
-
-const octokit = new Octokit({
-  auth: process.env.GITHUB_ACCESS_TOKEN,
-})
+import { getServerSession } from 'next-auth'
+import { authOptions } from '../../auth/[...nextauth]/route'
 
 export async function GET(request: NextRequest) {
   try {
@@ -18,65 +16,97 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Fetch repository information
-    const { data: repoData } = await octokit.rest.repos.get({
-      owner,
-      repo,
-    })
-
-    // Fetch repository languages
-    const { data: languages } = await octokit.rest.repos.listLanguages({
-      owner,
-      repo,
-    })
-
-    // Transform the data to match our interface
-    const transformedData = {
-      name: repoData.name,
-      description: repoData.description,
-      stars: repoData.stargazers_count,
-      forks: repoData.forks_count,
-      watchers: repoData.watchers_count,
-      language: repoData.language,
-      languages,
-      created_at: repoData.created_at,
-      updated_at: repoData.updated_at,
-      size: repoData.size,
-      open_issues: repoData.open_issues_count,
-      license: repoData.license?.name || 'No license',
-      default_branch: repoData.default_branch,
-      private: repoData.private,
-      html_url: repoData.html_url,
-      clone_url: repoData.clone_url,
-      topics: repoData.topics || [],
-      has_wiki: repoData.has_wiki,
-      has_pages: repoData.has_pages,
-      has_projects: repoData.has_projects,
-      archived: repoData.archived,
-      disabled: repoData.disabled,
-      visibility: repoData.visibility,
-    }
-
-    return NextResponse.json(transformedData)
-  } catch (error: any) {
-    console.error('Error fetching repository:', error)
+    // Get user session to access their GitHub token
+    const session = await getServerSession(authOptions)
     
-    if (error.status === 404) {
-      return NextResponse.json(
-        { error: 'Repository not found' },
-        { status: 404 }
-      )
-    }
+    // Use user's GitHub token if available, otherwise fall back to server token
+    const githubToken = session?.githubAccessToken || process.env.GITHUB_ACCESS_TOKEN
     
-    if (error.status === 403) {
+    if (!githubToken) {
       return NextResponse.json(
-        { error: 'Access denied. Repository may be private.' },
-        { status: 403 }
+        { 
+          error: 'GitHub access required',
+          requiresAuth: true,
+          message: 'Please sign in with GitHub to access private repositories'
+        },
+        { status: 401 }
       )
     }
 
+    const octokit = new Octokit({
+      auth: githubToken,
+    })
+
+    try {
+      const { data } = await octokit.repos.get({
+        owner,
+        repo,
+      })
+
+      // Transform the data to match our interface
+      const repoData = {
+        name: data.name,
+        description: data.description,
+        stars: data.stargazers_count,
+        forks: data.forks_count,
+        watchers: data.watchers_count,
+        language: data.language,
+        languages: {}, // Will be populated by a separate call if needed
+        created_at: data.created_at,
+        updated_at: data.updated_at,
+        size: data.size,
+        open_issues: data.open_issues_count,
+        license: data.license?.name || 'No license',
+        default_branch: data.default_branch,
+        private: data.private,
+        html_url: data.html_url,
+        clone_url: data.clone_url,
+        topics: data.topics || [],
+        has_wiki: data.has_wiki,
+        has_pages: data.has_pages,
+        has_projects: data.has_projects,
+        archived: data.archived,
+        disabled: data.disabled,
+        visibility: data.visibility,
+      }
+
+      return NextResponse.json(repoData)
+    } catch (error: any) {
+      console.error('GitHub API error:', error)
+      
+      if (error.status === 404) {
+        return NextResponse.json(
+          { 
+            error: 'Repository not found or access denied',
+            requiresAuth: !session?.githubAccessToken,
+            message: session?.githubAccessToken 
+              ? 'Repository not found or you do not have access to this private repository'
+              : 'Repository not found. If this is a private repository, please sign in with GitHub'
+          },
+          { status: 404 }
+        )
+      }
+      
+      if (error.status === 403) {
+        return NextResponse.json(
+          { 
+            error: 'GitHub API rate limit exceeded or access forbidden',
+            requiresAuth: !session?.githubAccessToken,
+            message: 'API rate limit exceeded. Please sign in with GitHub for higher rate limits'
+          },
+          { status: 403 }
+        )
+      }
+
+      return NextResponse.json(
+        { error: 'Failed to fetch repository data' },
+        { status: 500 }
+      )
+    }
+  } catch (error) {
+    console.error('Repository API error:', error)
     return NextResponse.json(
-      { error: 'Failed to fetch repository information' },
+      { error: 'Internal server error' },
       { status: 500 }
     )
   }

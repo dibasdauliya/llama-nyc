@@ -6,8 +6,8 @@ import SessionProvider from "@/components/SessionProvider";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "AI Video Interviewer - Practice Interviews with AI",
-  description: "Master your interview skills with AI-powered video interviews. Practice VISA interviews and job interviews with realistic AI avatars.",
+  title: "GitHub Project Analyzer - AI-Powered Repository Analysis",
+  description: "Analyze GitHub repositories with AI-powered insights. Get detailed code analysis, security scoring, and quality metrics for any GitHub project.",
 };
 
 export default function RootLayout({

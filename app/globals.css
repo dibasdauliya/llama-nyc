@@ -3,8 +3,8 @@
 @source inline("bg-blue-100 bg-green-100 bg-purple-100 text-blue-600 text-green-600 text-purple-600 from-blue-600 from-green-600 from-purple-600 to-blue-700 to-green-700 to-purple-700 hover:from-blue-700 hover:from-green-700 hover:from-purple-700 hover:to-blue-800 hover:to-green-800 hover:to-purple-800");
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #171717;
+  --foreground: #fff;
 }
 
 @theme inline {
@@ -41,7 +41,7 @@ input[type="tel"],
 input[type="url"],
 textarea,
 select {
-  color: #f2f6fb !important;
+  color: #171717 !important;
   font-weight: 500 !important; /* slightly bolder for better readability */
 }
 
@@ -54,8 +54,8 @@ select {
 
 /* Select dropdown options */
 option {
-  color: #1f2937 !important; /* gray-800 */
-  background: white !important;
+  color: white !important;
+  background: #1f2937 !important;
 }
 
 /* Custom scrollbar styling */

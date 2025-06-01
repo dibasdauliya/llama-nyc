@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { Octokit } from '@octokit/rest'
-
-const octokit = new Octokit({
-  auth: process.env.GITHUB_ACCESS_TOKEN,
-})
+import { getServerSession } from 'next-auth'
+import { authOptions } from '../../auth/[...nextauth]/route'
 
 // Mock data generator for demo purposes
 // In a real implementation, you would analyze the actual repository code
@@ -71,6 +69,27 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    // Get user session to access their GitHub token
+    const session = await getServerSession(authOptions)
+    
+    // Use user's GitHub token if available, otherwise fall back to server token
+    const githubToken = session?.githubAccessToken || process.env.GITHUB_ACCESS_TOKEN
+    
+    if (!githubToken) {
+      return NextResponse.json(
+        { 
+          error: 'GitHub access required',
+          requiresAuth: true,
+          message: 'Please sign in with GitHub to analyze private repositories'
+        },
+        { status: 401 }
+      )
+    }
+
+    const octokit = new Octokit({
+      auth: githubToken,
+    })
+
     // Fetch basic repository data for analysis context
     const { data: repoData } = await octokit.rest.repos.get({
       owner,
@@ -114,16 +133,29 @@ export async function GET(request: NextRequest) {
   } catch (error: any) {
     console.error('Error analyzing repository:', error)
     
+    // Get session for error handling
+    const session = await getServerSession(authOptions)
+    
     if (error.status === 404) {
       return NextResponse.json(
-        { error: 'Repository not found' },
+        { 
+          error: 'Repository not found or access denied',
+          requiresAuth: !session?.githubAccessToken,
+          message: session?.githubAccessToken 
+            ? 'Repository not found or you do not have access to this private repository'
+            : 'Repository not found. If this is a private repository, please sign in with GitHub'
+        },
         { status: 404 }
       )
     }
     
     if (error.status === 403) {
       return NextResponse.json(
-        { error: 'Access denied. Repository may be private.' },
+        { 
+          error: 'GitHub API rate limit exceeded or access forbidden',
+          requiresAuth: !session?.githubAccessToken,
+          message: 'API rate limit exceeded. Please sign in with GitHub for higher rate limits'
+        },
         { status: 403 }
       )
     }

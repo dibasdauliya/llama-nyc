@@ -1,5 +1,6 @@
 import NextAuth, { AuthOptions } from "next-auth"
 import GoogleProvider from "next-auth/providers/google"
+import GitHubProvider from "next-auth/providers/github"
 import { PrismaAdapter } from "@next-auth/prisma-adapter"
 import { prisma } from "@/lib/prisma"
 import { google } from "googleapis"
@@ -20,6 +21,15 @@ export const authOptions: AuthOptions = {
           access_type: "offline",
         }
       }
+    }),
+    GitHubProvider({
+      clientId: process.env.GITHUB_CLIENT_ID!,
+      clientSecret: process.env.GITHUB_CLIENT_SECRET!,
+      authorization: {
+        params: {
+          scope: 'read:user user:email public_repo repo',
+        }
+      }
     })
   ],
   callbacks: {
@@ -27,6 +37,7 @@ export const authOptions: AuthOptions = {
       console.log('JWT Callback called with:', {
         hasUser: !!user,
         hasAccount: !!account,
+        provider: account?.provider,
         tokenEmail: token.email,
         tokenId: token.id,
         userObject: user ? { id: user.id, email: user.email } : null
@@ -35,21 +46,35 @@ export const authOptions: AuthOptions = {
       // If this is a sign-in, save the access and refresh tokens
       if (account) {
         console.log('Saving tokens from account:', {
+          provider: account.provider,
           hasAccessToken: !!account.access_token,
           accessTokenLength: account.access_token?.length,
           hasRefreshToken: !!account.refresh_token,
           expiresAt: account.expires_at
         });
         
+        // Store tokens based on provider
+        if (account.provider === 'google') {
+          token.googleAccessToken = account.access_token;
+          token.googleRefreshToken = account.refresh_token;
+          token.googleAccessTokenExpires = account.expires_at! * 1000;
+        } else if (account.provider === 'github') {
+          token.githubAccessToken = account.access_token;
+          token.githubRefreshToken = account.refresh_token;
+          token.githubAccessTokenExpires = account.expires_at! * 1000;
+        }
+        
+        // Keep backward compatibility
         token.accessToken = account.access_token;
         token.refreshToken = account.refresh_token;
-        token.accessTokenExpires = account.expires_at! * 1000; // Convert to ms
+        token.accessTokenExpires = account.expires_at! * 1000;
       }
 
-      // If we have a token but it's expired, try to refresh it
+      // Handle Google token refresh
       const currentTime = Date.now();
-      if (token.accessTokenExpires && currentTime > token.accessTokenExpires && token.refreshToken) {
-        console.log('Access token expired, attempting to refresh...');
+      const googleExpires = token.googleAccessTokenExpires as number | undefined;
+      if (googleExpires && currentTime > googleExpires && token.googleRefreshToken) {
+        console.log('Google access token expired, attempting to refresh...');
         try {
           // Create a new OAuth2 client
           const oauth2Client = new google.auth.OAuth2(
@@ -60,23 +85,27 @@ export const authOptions: AuthOptions = {
           
           // Set the refresh token
           oauth2Client.setCredentials({
-            refresh_token: token.refreshToken
+            refresh_token: token.googleRefreshToken as string
           });
           
           // Get a new access token
           const response = await oauth2Client.refreshAccessToken();
-          console.log('Token refreshed successfully');
+          console.log('Google token refreshed successfully');
           
           // Update the token
-          // @ts-ignore: The type definition doesn't match the actual response
-          token.accessToken = response.credentials.access_token;
-          token.accessTokenExpires = Date.now() + (response.credentials.expiry_date! - Date.now());
+          token.googleAccessToken = response.credentials.access_token as string;
+          const expiryDate = response.credentials.expiry_date as number;
+          token.googleAccessTokenExpires = Date.now() + (expiryDate - Date.now());
+          
+          // Update backward compatibility token
+          token.accessToken = response.credentials.access_token as string;
+          token.accessTokenExpires = token.googleAccessTokenExpires as number;
         } catch (error) {
-          console.error('Error refreshing access token:', error);
+          console.error('Error refreshing Google access token:', error);
           // Token refresh failed, clear the tokens to force a new sign-in
-          token.accessToken = undefined;
-          token.refreshToken = undefined;
-          token.accessTokenExpires = undefined;
+          token.googleAccessToken = undefined;
+          token.googleRefreshToken = undefined;
+          token.googleAccessTokenExpires = undefined;
         }
       }
 
@@ -110,7 +139,9 @@ export const authOptions: AuthOptions = {
       console.log('Session callback called with:', {
         sessionUserEmail: session.user?.email,
         tokenId: token.id,
-        tokenEmail: token.email
+        tokenEmail: token.email,
+        hasGithubToken: !!token.githubAccessToken,
+        hasGoogleToken: !!token.googleAccessToken
       });
 
       if (session.user && token.id) {
@@ -120,13 +151,17 @@ export const authOptions: AuthOptions = {
         console.log('Could not add ID to session - missing token.id or session.user');
       }
 
-      // Add access token to session so it can be used by client
-      session.accessToken = token.accessToken;
+      // Add access tokens to session so they can be used by client
+      session.accessToken = token.accessToken as string;
+      session.githubAccessToken = token.githubAccessToken as string;
+      session.googleAccessToken = token.googleAccessToken as string;
       
       console.log('Session callback returning:', {
         hasId: !!session.user?.id,
         email: session.user?.email,
-        hasAccessToken: !!session.accessToken
+        hasAccessToken: !!session.accessToken,
+        hasGithubToken: !!session.githubAccessToken,
+        hasGoogleToken: !!session.googleAccessToken
       });
       return session;
     },

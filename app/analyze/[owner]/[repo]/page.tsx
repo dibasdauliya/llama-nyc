@@ -1,8 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams } from 'next/navigation'
-import { ArrowLeft, Github, ExternalLink, Star, GitFork, Eye, Calendar, Users, FileText, Code, Shield, Zap, BarChart3, Clock, Activity, AlertTriangle, CheckCircle, XCircle, Loader2 } from 'lucide-react'
+import { useSession, signIn, signOut } from 'next-auth/react'
+import { ArrowLeft, Github, ExternalLink, Star, GitFork, Eye, Calendar, Users, FileText, Code, Shield, Zap, BarChart3, Clock, Activity, AlertTriangle, CheckCircle, XCircle, Loader2, Download, Archive, Lock, ChevronDown } from 'lucide-react'
 import Link from 'next/link'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts'
 import ReactMarkdown from 'react-markdown'
@@ -69,30 +70,73 @@ const COLORS = ['#8884d8', '#82ca9d', '#ffc658', '#ff7300', '#00c49f', '#ffbb28'
 export default function AnalyzePage() {
   const params = useParams()
   const { owner, repo } = params as { owner: string; repo: string }
+  const { data: session, status: sessionStatus } = useSession()
   
   const [repoData, setRepoData] = useState<RepoData | null>(null)
   const [analysisData, setAnalysisData] = useState<AnalysisData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [requiresAuth, setRequiresAuth] = useState(false)
+  const [authMessage, setAuthMessage] = useState<string>('')
   const [currentStep, setCurrentStep] = useState('Fetching repository...')
   const [aiInsights, setAiInsights] = useState<string>('')
   const [generatingInsights, setGeneratingInsights] = useState(false)
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false)
+  const dropdownRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     analyzeRepository()
   }, [owner, repo])
 
-  const analyzeRepository = async () => {
+  // Auto-retry when user signs in after encountering auth error
+  useEffect(() => {
+    if (requiresAuth && session?.githubAccessToken) {
+      console.log('User signed in, retrying repository analysis...')
+      analyzeRepository()
+    }
+  }, [session?.githubAccessToken, requiresAuth])
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (isDropdownOpen && dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false)
+      }
+    }
+
+    if (isDropdownOpen) {
+      document.addEventListener('click', handleClickOutside)
+    }
+
+    return () => {
+      document.removeEventListener('click', handleClickOutside)
+    }
+  }, [isDropdownOpen])
+
+  const analyzeRepository = useCallback(async () => {
     try {
       setLoading(true)
       setError(null)
+      setRequiresAuth(false)
       
       // Step 1: Fetch repository data
       setCurrentStep('Fetching repository information...')
       const repoResponse = await fetch(`/api/github/repository?owner=${owner}&repo=${repo}`)
+      
       if (!repoResponse.ok) {
-        throw new Error('Repository not found or access denied')
+        const errorData = await repoResponse.json()
+        
+        if (errorData.requiresAuth) {
+          setRequiresAuth(true)
+          setAuthMessage(errorData.message || 'Authentication required')
+          setError('Authentication required for private repository')
+          setLoading(false)
+          return
+        }
+        
+        throw new Error(errorData.message || 'Repository not found or access denied')
       }
+      
       const repoData = await repoResponse.json()
       setRepoData(repoData)
       
@@ -112,9 +156,9 @@ export default function AnalyzePage() {
       setError(error instanceof Error ? error.message : 'An unknown error occurred')
       setLoading(false)
     }
-  }
+  }, [owner, repo])
 
-  const generateAIInsights = async () => {
+  const generateAIInsights = useCallback(async () => {
     if (!repoData || !analysisData) return
     
     setGeneratingInsights(true)
@@ -137,7 +181,7 @@ export default function AnalyzePage() {
     } finally {
       setGeneratingInsights(false)
     }
-  }
+  }, [repoData, analysisData])
 
   const getScoreColor = (score: number) => {
     if (score >= 80) return 'text-green-400'
@@ -149,6 +193,37 @@ export default function AnalyzePage() {
     if (score >= 80) return 'bg-green-400/20'
     if (score >= 60) return 'bg-yellow-400/20'
     return 'bg-red-400/20'
+  }
+
+  const handleCloneRepository = async () => {
+    if (!repoData) return
+    
+    const cloneCommand = `git clone ${repoData.clone_url}`
+    
+    try {
+      // Copy to clipboard
+      await navigator.clipboard.writeText(cloneCommand)
+      alert(`✅ Clone command copied to clipboard!\n\nPaste it in your terminal.`)
+    } catch (error) {
+      console.error('Failed to copy to clipboard:', error)
+      // Fallback: show the command in a prompt for manual copying
+      alert(`📋 Copy this command and paste it in your terminal:\n\n${cloneCommand}`)
+    }
+  }
+
+  const handleDownloadZip = () => {
+    if (!repoData) return
+    
+    // GitHub's ZIP download URL format
+    const zipUrl = `https://github.com/${owner}/${repo}/archive/refs/heads/${repoData.default_branch}.zip`
+    
+    // Create temporary link and trigger download
+    const link = document.createElement('a')
+    link.href = zipUrl
+    link.download = `${repoData.name}-${repoData.default_branch}.zip`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
   }
 
   if (loading) {
@@ -169,18 +244,81 @@ export default function AnalyzePage() {
   if (error) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
-        <div className="text-center">
-          <XCircle className="h-16 w-16 text-red-400 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-white mb-2">Analysis Failed</h2>
-          <p className="text-gray-300 mb-6">{error}</p>
-          <div className="space-x-4">
-            <Link href="/" className="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 transition-colors">
-              Try Another Repository
-            </Link>
-            <button onClick={analyzeRepository} className="bg-gray-600 text-white px-6 py-2 rounded-lg hover:bg-gray-700 transition-colors">
-              Retry Analysis
-            </button>
-          </div>
+        <div className="text-center max-w-md mx-auto px-6">
+          {requiresAuth ? (
+            <>
+              <Lock className="h-16 w-16 text-yellow-400 mx-auto mb-4" />
+              <h2 className="text-2xl font-bold text-white mb-2">Private Repository Access</h2>
+              <p className="text-gray-300 mb-4">{authMessage}</p>
+              
+              {!session ? (
+                <>
+                  <div className="bg-blue-900/20 border border-blue-500/30 rounded-lg p-4 mb-6">
+                    <h3 className="text-blue-200 font-semibold mb-2">🔓 Unlock Private Repository Analysis</h3>
+                    <ul className="text-sm text-blue-100 space-y-1">
+                      <li>• Access your private repositories</li>
+                      <li>• Get 5,000 API calls/hour (vs 60 without auth)</li>
+                      <li>• Secure: read-only access, revoke anytime</li>
+                    </ul>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    <button
+                      onClick={() => signIn('github')}
+                      className="w-full bg-gray-900 text-white px-6 py-3 rounded-lg hover:bg-gray-800 transition-colors flex items-center justify-center border border-gray-700"
+                    >
+                      <Github className="h-5 w-5 mr-2" />
+                      Sign in with GitHub
+                    </button>
+                    <p className="text-sm text-gray-400 text-center">
+                      Redirects to GitHub for secure authentication
+                    </p>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="bg-green-900/20 border border-green-500/30 rounded-lg p-4 mb-6">
+                    <p className="text-green-200 text-sm">
+                      ✅ You're signed in as <strong>{session.user?.name}</strong>
+                    </p>
+                    <p className="text-green-100 text-xs mt-1">
+                      Retrying repository access...
+                    </p>
+                  </div>
+                  
+                  <div className="flex items-center justify-center mb-4">
+                    <Loader2 className="h-6 w-6 animate-spin text-purple-400 mr-2" />
+                    <span className="text-gray-300">Checking repository access...</span>
+                  </div>
+                </>
+              )}
+              
+              <div className="flex space-x-4 mt-6">
+                <Link href="/" className="flex-1 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors text-center">
+                  Try Another Repository
+                </Link>
+                {session && (
+                  <button onClick={analyzeRepository} className="flex-1 bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors">
+                    Retry Analysis
+                  </button>
+                )}
+              </div>
+            </>
+          ) : (
+            <>
+              <XCircle className="h-16 w-16 text-red-400 mx-auto mb-4" />
+              <h2 className="text-2xl font-bold text-white mb-2">Analysis Failed</h2>
+              <p className="text-gray-300 mb-6">{error}</p>
+              <div className="space-x-4">
+                <Link href="/" className="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 transition-colors inline-block">
+                  Try Another Repository
+                </Link>
+                <button onClick={analyzeRepository} className="bg-gray-600 text-white px-6 py-2 rounded-lg hover:bg-gray-700 transition-colors">
+                  Retry Analysis
+                </button>
+              </div>
+            </>
+          )}
         </div>
       </div>
     )
@@ -191,7 +329,7 @@ export default function AnalyzePage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
       {/* Header */}
-      <nav className="border-b border-gray-800 bg-black/20 backdrop-blur-sm">
+      <nav className="border-b border-gray-800 bg-black/20 backdrop-blur-sm relative z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex items-center">
@@ -206,6 +344,81 @@ export default function AnalyzePage() {
               </div>
             </div>
             <div className="flex items-center space-x-4">
+              {session && session.user ? (
+                <div className="flex items-center space-x-2">
+                  <img 
+                    src={session.user?.image || ''} 
+                    alt={session.user?.name || 'User'} 
+                    className="w-8 h-8 rounded-full"
+                  />
+                  <span className="text-sm text-gray-300">{session.user?.name}</span>
+                  <button
+                    onClick={() => signOut()}
+                    className="text-sm text-gray-400 hover:text-white transition-colors px-2 py-1 rounded"
+                  >
+                    Sign Out
+                  </button>
+                </div>
+              ) : sessionStatus === 'loading' ? (
+                <div className="flex items-center space-x-2">
+                  <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
+                  <span className="text-sm text-gray-400">Loading...</span>
+                </div>
+              ) : (
+                <button
+                  onClick={() => signIn('github')}
+                  className="flex items-center text-gray-300 hover:text-white transition-colors bg-gray-800/50 px-3 py-2 rounded-lg border border-gray-600"
+                >
+                  <Github className="h-4 w-4 mr-1" />
+                  Sign in with GitHub
+                </button>
+              )}
+              {/* Download Actions Dropdown */}
+              <div className="relative z-50" ref={dropdownRef}>
+                <button
+                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                  className="flex items-center text-gray-300 hover:text-white transition-colors bg-gray-800/50 px-3 py-2 rounded-lg border border-gray-600"
+                >
+                  <Download className="h-4 w-4 mr-1" />
+                  Actions
+                  <ChevronDown className="h-4 w-4 ml-1" />
+                </button>
+                
+                {isDropdownOpen && (
+                  <div className="absolute z-[9999] right-0 mt-2 w-56 bg-gray-800 border border-gray-600 rounded-lg shadow-xl">
+                    <div className="py-1">
+                      <button
+                        onClick={() => {
+                          handleCloneRepository()
+                          setIsDropdownOpen(false)
+                        }}
+                        className="flex items-center w-full px-4 py-2 text-gray-300 hover:text-white hover:bg-gray-700 transition-colors"
+                      >
+                        <Download className="h-4 w-4 mr-3 text-green-400" />
+                        <div className="text-left">
+                          <div className="font-medium">Copy Clone Command</div>
+                          <div className="text-xs text-gray-400">Copy git clone to clipboard</div>
+                        </div>
+                      </button>
+                      
+                      <button
+                        onClick={() => {
+                          handleDownloadZip()
+                          setIsDropdownOpen(false)
+                        }}
+                        className="flex items-center w-full px-4 py-2 text-gray-300 hover:text-white hover:bg-gray-700 transition-colors"
+                      >
+                        <Archive className="h-4 w-4 mr-3 text-blue-400" />
+                        <div className="text-left">
+                          <div className="font-medium">Download ZIP</div>
+                          <div className="text-xs text-gray-400">Download repository archive</div>
+                        </div>
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+              
               <a 
                 href={repoData.html_url} 
                 target="_blank" 
@@ -221,9 +434,9 @@ export default function AnalyzePage() {
       </nav>
 
       {/* Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-10">
         {/* Repository Overview */}
-        <div className="bg-white/5 backdrop-blur-sm border border-gray-700 rounded-xl p-6 mb-8">
+        <div className="relative z-10 bg-white/5 backdrop-blur-sm border border-gray-700 rounded-xl p-6 mb-8">
           <div className="flex items-start justify-between">
             <div className="flex-1">
               <h1 className="text-3xl font-bold text-white mb-2">{repoData.name}</h1>
@@ -410,7 +623,15 @@ export default function AnalyzePage() {
                       alt={contributor.login}
                       className="w-8 h-8 rounded-full mr-3"
                     />
-                    <span className="text-white">{contributor.login}</span>
+                    <a 
+                      href={`https://github.com/${contributor.login}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue- hover:text-blue-300 underline transition-colors flex items-center group"
+                    >
+                      <span className="mr-1">{contributor.login}</span>
+                      <ExternalLink className="h-3 w-3 opacity-70 group-hover:opacity-100 transition-opacity" />
+                    </a>
                   </div>
                   <span className="text-gray-300">{contributor.contributions} commits</span>
                 </div>

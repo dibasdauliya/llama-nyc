@@ -83,6 +83,7 @@ export default function AnalyzePage() {
   const [generatingInsights, setGeneratingInsights] = useState(false)
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
+  const aiInsightsRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     analyzeRepository()
@@ -224,6 +225,24 @@ export default function AnalyzePage() {
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
+  }
+
+  const handleGetAIAnalysis = () => {
+    // Scroll to AI insights section
+    if (aiInsightsRef.current) {
+      aiInsightsRef.current.scrollIntoView({ 
+        behavior: 'smooth', 
+        block: 'start' 
+      })
+    }
+    
+    // Generate AI insights if not already generated
+    if (!aiInsights && !generatingInsights) {
+      // Small delay to let scroll complete before starting generation
+      setTimeout(() => {
+        generateAIInsights()
+      }, 500)
+    }
   }
 
   if (loading) {
@@ -415,7 +434,7 @@ export default function AnalyzePage() {
                         </div>
                       </button>
                       
-                      {session && session.user && (
+                      {/* {session && session.user && (
                         <>
                           <div className="border-t border-gray-600 my-1"></div>
                           <button
@@ -432,7 +451,7 @@ export default function AnalyzePage() {
                             </div>
                           </button>
                         </>
-                      )}
+                      )} */}
                     </div>
                   </div>
                 )}
@@ -696,7 +715,7 @@ export default function AnalyzePage() {
         </div>
 
         {/* AI Insights */}
-        <div className="bg-white/5 backdrop-blur-sm border border-gray-700 rounded-xl p-6">
+        <div ref={aiInsightsRef} className="bg-white/5 backdrop-blur-sm border border-gray-700 rounded-xl p-6">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center">
               <Zap className="h-6 w-6 text-orange-400 mr-2" />
@@ -704,7 +723,7 @@ export default function AnalyzePage() {
             </div>
             {!aiInsights && (
               <button
-                onClick={generateAIInsights}
+                onClick={handleGetAIAnalysis}
                 disabled={generatingInsights}
                 className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
               >
@@ -832,7 +851,7 @@ export default function AnalyzePage() {
               </p>
               {!generatingInsights && (
                 <button
-                  onClick={generateAIInsights}
+                  onClick={handleGetAIAnalysis}
                   className="bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition-colors"
                 >
                   Generate AI Analysis
@@ -842,6 +861,27 @@ export default function AnalyzePage() {
           )}
         </div>
       </div>
+      
+      {/* Floating AI Analysis Button */}
+      {!aiInsights && !loading && repoData && analysisData && (
+        <button
+          onClick={handleGetAIAnalysis}
+          disabled={generatingInsights}
+          className="fixed bottom-8 right-8 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-6 py-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2 z-50"
+        >
+          {generatingInsights ? (
+            <>
+              <Loader2 className="h-5 w-5 animate-spin" />
+              <span className="font-medium">Generating...</span>
+            </>
+          ) : (
+            <>
+              <Zap className="h-5 w-5" />
+              <span className="font-medium">Get AI Analysis</span>
+            </>
+          )}
+        </button>
+      )}
     </div>
   )
 } 

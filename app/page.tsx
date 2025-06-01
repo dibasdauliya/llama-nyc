@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useSession, signIn } from "next-auth/react";
+import { useSession, signIn, signOut } from "next-auth/react";
 import { Search, Github, Lock, Globe, Loader2, BarChart3, GitBranch, Users, FileText, Shield, Zap, AlertCircle, CheckCircle, Info } from "lucide-react";
 import Link from "next/link";
 
@@ -159,6 +159,12 @@ export default function HomePage() {
                     className="w-8 h-8 rounded-full"
                   />
                   <span className="text-gray-300">{session.user.name}</span>
+                  <button
+                    onClick={() => signOut()}
+                    className="text-sm text-gray-400 hover:text-white transition-colors px-2 py-1 rounded"
+                  >
+                    Sign Out
+                  </button>
                 </div>
               ) : (
                 <button

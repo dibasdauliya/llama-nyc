@@ -414,6 +414,25 @@ export default function AnalyzePage() {
                           <div className="text-xs text-gray-400">Download repository archive</div>
                         </div>
                       </button>
+                      
+                      {session && session.user && (
+                        <>
+                          <div className="border-t border-gray-600 my-1"></div>
+                          <button
+                            onClick={() => {
+                              signOut()
+                              setIsDropdownOpen(false)
+                            }}
+                            className="flex items-center w-full px-4 py-2 text-gray-300 hover:text-white hover:bg-gray-700 transition-colors"
+                          >
+                            <Github className="h-4 w-4 mr-3 text-red-400" />
+                            <div className="text-left">
+                              <div className="font-medium">Sign Out</div>
+                              <div className="text-xs text-gray-400">Sign out of GitHub</div>
+                            </div>
+                          </button>
+                        </>
+                      )}
                     </div>
                   </div>
                 )}

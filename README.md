@@ -1,6 +1,6 @@
 # GitHub Project Analyzer
 
-A comprehensive GitHub repository analyzer that provides detailed insights, statistics, and AI-powered analysis of any public or private GitHub repository.
+A comprehensive GitHub repository analyzer that provides detailed insights, statistics, and AI-powered analysis of any public or private GitHub repository. Features an intelligent chat interface for interactive exploration of repository insights.
 
 ## Features
 
@@ -18,6 +18,7 @@ A comprehensive GitHub repository analyzer that provides detailed insights, stat
 - **AI-Powered Insights**: Detailed AI analysis of code patterns, architecture, and best practices
 - **Interactive Reports**: Beautiful, detailed reports with charts and visualizations
 - **Modern UI**: Clean, responsive interface with real-time analysis progress
+- **AI Chat Interface**: Intelligent conversational interface to explore repository insights and get detailed explanations
 
 ## Analysis Features
 

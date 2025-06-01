@@ -68,7 +68,7 @@ export default function EmailList({ type, onSelectEmail }: EmailListProps) {
               {emails.map((email) => (
                 <tr 
                   key={email.id} 
-                  className={`hover:bg-gray-50 cursor-pointer ${!email.read ? 'font-semibold' : ''}`}
+                  className={`hover:bg-gray-50 cursor-pointer ${email.unread ? 'font-semibold' : ''}`}
                   onClick={() => onSelectEmail(email)}
                 >
                   <td className="py-3 pl-4 pr-2 w-10">

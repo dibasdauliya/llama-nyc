@@ -1,8 +1,11 @@
 /**
  * Formats a date for the email list display
  */
-export function formatDate(dateString: string): string {
-  const date = new Date(dateString);
+export function formatDate(date: Date | string): string {
+  if (typeof date === 'string') {
+    date = new Date(date);
+  }
+  
   const now = new Date();
   
   // Today

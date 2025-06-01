@@ -3,9 +3,9 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams } from 'next/navigation'
 import { useSession, signIn, signOut } from 'next-auth/react'
-import { ArrowLeft, Github, ExternalLink, Star, GitFork, Eye, Calendar, Users, FileText, Code, Shield, Zap, BarChart3, Clock, Activity, AlertTriangle, CheckCircle, XCircle, Loader2, Download, Archive, Lock, ChevronDown, AlertCircle } from 'lucide-react'
+import { ArrowLeft, Github, ExternalLink, Star, GitFork, Eye, FileText, Code, Shield, Zap, BarChart3, Activity, AlertTriangle, CheckCircle, XCircle, Loader2, Download, Archive, Lock, ChevronDown } from 'lucide-react'
 import Link from 'next/link'
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts'
+import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts'
 import ReactMarkdown from 'react-markdown'
 
 interface RepoData {

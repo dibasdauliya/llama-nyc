@@ -20,7 +20,7 @@ export default function Home() {
             </div>
             <div>
               <h1 className="text-2xl font-bold text-gray-900">AI Video Interviewer</h1>
-              <p className="text-sm text-gray-600">Powered by Tavus AI</p>
+              {/* <p className="text-sm text-gray-600">Powered by Tavus AI</p> */}
             </div>
           </div>
           

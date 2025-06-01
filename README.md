@@ -18,8 +18,8 @@ A comprehensive GitHub repository analyzer that provides detailed insights, stat
 - **AI-Powered Insights**: Detailed AI analysis of code patterns, architecture, and best practices using **Llama-4-Maverick-17B-128E-Instruct-FP8**
 - **AI Chat Interface**: Intelligent conversational interface powered by **Llama-4-Maverick-17B-128E-Instruct-FP8** to explore repository insights and get detailed explanations
 - **Persistent Storage**: **AWS RDS Postgres database** stores analyzed repositories for quick access and maintains user sessions for seamless browsing experience
-- **Interactive Reports**: Beautiful, detailed reports with charts and visualizations
-- **Modern UI**: Clean, responsive interface with real-time analysis progress
+- **Interactive Reports**: Beautiful, detailed reports with charts and visualizations (recharts.js)
+- **Modern UI**: Clean and responsive interface (TailwindCSS)
 
 ## Analysis Features
 

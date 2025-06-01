@@ -95,13 +95,35 @@ async function generateOpenAICompatibleInsights(context: string): Promise<string
 
 // Mock insights function (fallback)
 function generateMockInsights(repository: any, analysis: any): string {
+  const techStackAnalysis = analysis.techStack && analysis.techStack.length > 0 
+    ? `### 🛠️ Technology Stack Analysis
+
+**Detected Technologies: ${analysis.techStack.length}**
+
+${analysis.techStack.map((tech: any) => `- **${tech.icon || '🔧'} ${tech.name}** (${tech.type})${tech.version ? ` - ${tech.version}` : ''}`).join('\n')}
+
+**Stack Assessment:**
+- Modern technology choices with good ecosystem support
+- Well-balanced combination of frontend and backend technologies
+- ${analysis.techStack.filter((t: any) => t.confidence === 'high').length} high-confidence detections suggest clear technology usage
+- Consider evaluating dependency management and keeping technologies up-to-date
+
+**Recommendations:**
+- Ensure all dependencies are regularly updated for security
+- Consider implementing automated dependency vulnerability scanning
+- Document technology choices and architectural decisions
+- Plan for technology migration strategies as the stack evolves
+
+`
+    : ''
+
   return `
 ## 🔍 Repository Analysis Summary
 
 ### Overall Assessment
 This repository shows **${analysis.maintainabilityScore >= 80 ? 'excellent' : analysis.maintainabilityScore >= 60 ? 'good' : 'needs improvement'}** maintainability with a score of ${analysis.maintainabilityScore}/100. The codebase consists of ${analysis.codeMetrics.totalLines.toLocaleString()} lines across ${analysis.codeMetrics.totalFiles} files, indicating a ${analysis.codeMetrics.totalFiles > 500 ? 'large-scale' : analysis.codeMetrics.totalFiles > 100 ? 'medium-scale' : 'small-scale'} project.
 
-### 🏗️ Architecture & Design Patterns
+${techStackAnalysis}### 🏗️ Architecture & Design Patterns
 
 **Strengths:**
 - Well-structured project with clear separation of concerns
@@ -131,7 +153,7 @@ ${analysis.vulnerabilities.length === 0 ?
 ### ⚡ Performance Optimization
 
 **Current Metrics:**
-- Complexity Score: ${analysis.codeMetrics.avgComplexity.toFixed(1)} (${analysis.codeMetrics.avgComplexity < 3 ? 'Good' : analysis.codeMetrics.avgComplexity < 5 ? 'Moderate' : 'High'})
+- Complexity Score: ${analysis.codeMetrics.avgComplexity.toFixed(1)}
 - Code Efficiency: ${analysis.codeMetrics.avgComplexity < 3 ? 'Well-optimized' : 'Room for improvement'}
 
 **Opportunities:**
@@ -188,44 +210,52 @@ This ${repository.language} project demonstrates ${
 
 // Function to generate prompt for AI analysis
 function generatePrompt(repository: any, analysis: any): string {
-  return `Analyze this GitHub repository and provide detailed insights:
+  const techStackSummary = analysis.techStack && analysis.techStack.length > 0 
+    ? `\n\n**Technology Stack Detected:**\n${analysis.techStack.map((tech: any) => `- ${tech.name} (${tech.type})`).join('\n')}`
+    : ''
 
-Repository: ${repository.name}
-Description: ${repository.description || 'No description'}
-Primary Language: ${repository.language}
-Stars: ${repository.stars}
-Forks: ${repository.forks}
-Created: ${repository.created_at}
-Last Updated: ${repository.updated_at}
+  return `
+As an expert software engineer and code reviewer, provide detailed, actionable insights about this GitHub repository:
 
-Code Metrics:
-- Total Lines: ${analysis.codeMetrics.totalLines.toLocaleString()}
-- Total Files: ${analysis.codeMetrics.totalFiles.toLocaleString()}
-- Average Complexity: ${analysis.codeMetrics.avgComplexity.toFixed(1)}
-- Test Coverage: ${analysis.codeMetrics.testCoverage}%
+**Repository:** ${repository.name || repository.full_name}
+**Description:** ${repository.description || 'No description provided'}
+**Language:** ${repository.language || 'Unknown'}
+**Stars:** ${repository.stargazers_count || repository.stars || 0}
+**Forks:** ${repository.forks_count || repository.forks || 0}
+**Size:** ${repository.size || 0} KB
+**Created:** ${repository.created_at}
+**Last Updated:** ${repository.updated_at}${techStackSummary}
 
-Quality Scores:
-- Security Score: ${analysis.securityScore}/100
-- Maintainability Score: ${analysis.maintainabilityScore}/100
-- Documentation Score: ${analysis.documentationScore}/100
+**Analysis Results:**
+- Security Score: ${analysis.securityScore || 0}/100
+- Maintainability Score: ${analysis.maintainabilityScore || 0}/100  
+- Documentation Score: ${analysis.documentationScore || 0}/100
+- Total Lines of Code: ${analysis.codeMetrics?.totalLines || 0}
+- Total Files: ${analysis.codeMetrics?.totalFiles || 0}
+- Average Complexity: ${analysis.codeMetrics?.avgComplexity || 0}
+- Test Coverage: ${analysis.codeMetrics?.testCoverage || 0}%
 
-Languages Used: ${analysis.fileTypes.map((ft: any) => ft.name).join(', ')}
-Contributors: ${analysis.contributors.length}
-Security Issues: ${analysis.vulnerabilities.length}
+**File Types:**
+${(analysis.fileTypes || []).map((ft: any) => `- ${ft.name}: ${ft.lines} lines (${ft.count} files)`).join('\n')}
+
+**Security Issues:**
+${(analysis.vulnerabilities || []).length === 0 ? '- No major security vulnerabilities detected' : 
+  (analysis.vulnerabilities || []).map((vuln: any) => `- ${vuln.severity?.toUpperCase()}: ${vuln.title}`).join('\n')}
+
+**Contributors:** ${(analysis.contributors || []).length} contributors
 
 Please provide a comprehensive analysis covering:
-1. Overall code quality assessment
-2. Architecture and design patterns recommendations
-3. Security analysis and recommendations
-4. Performance optimization opportunities
-5. Maintainability improvements
-6. Testing strategy suggestions
-7. Documentation enhancement recommendations
-8. Best practices compliance
-9. Scalability considerations
-10. Future development recommendations
+1. **Architecture & Design Patterns** - Evaluate the overall structure and design
+2. **Technology Stack Assessment** - Analysis of chosen technologies and their suitability
+3. **Code Quality & Maintainability** - Areas for improvement
+4. **Security Analysis** - Security posture and recommendations  
+5. **Performance Optimization** - Potential performance improvements
+6. **Testing Strategy** - Test coverage and testing recommendations
+7. **Documentation** - Documentation quality and suggestions
+8. **Best Practices** - Adherence to industry standards
 
-Format your response using markdown with emojis for better readability.`
+Format your response in Markdown with emojis for better readability. Be specific, actionable, and constructive in your recommendations.
+`
 }
 
 async function saveAIInsightsToDatabase(repositoryFullName: string, insights: string) {

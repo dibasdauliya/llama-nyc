@@ -117,6 +117,7 @@ model RepositoryAnalysis {
   contributors          Json?      // Array of contributor objects
   commits               Json?      // Array of commit activity data
   fileTypes             Json?      // Array of file type distribution
+  techStack             Json?      // Array of detected technologies
   aiInsights            String?
   aiInsightsGeneratedAt DateTime?
   createdAt             DateTime   @default(now())

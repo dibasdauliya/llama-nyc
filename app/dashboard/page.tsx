@@ -205,10 +205,6 @@ export default function Dashboard() {
                     <>
                       {repositories.length} repositories analyzed
                       {session && repositories.some(r => r.isPrivate) && ` • ${repositories.filter(r => r.isPrivate).length} private`}
-                      <br />
-                      <span className="text-sm text-gray-400">
-                        Total views: {repositories.reduce((sum, repo) => sum + repo.viewCount, 0)}
-                      </span>
                     </>
                   ) : (
                     <>
@@ -220,11 +216,6 @@ export default function Dashboard() {
                     </>
                   )}
                 </p>
-              </div>
-              <div className="text-right">
-                <Github className="h-8 w-8 text-blue-400 mb-2" />
-                <div className="text-2xl font-bold text-white">{repositories.length}</div>
-                <div className="text-xs text-gray-400">analyzed</div>
               </div>
             </div>
           </div>

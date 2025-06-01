@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams } from 'next/navigation'
 import { useSession, signIn, signOut } from 'next-auth/react'
-import { ArrowLeft, Github, ExternalLink, Star, GitFork, Eye, Calendar, Users, FileText, Code, Shield, Zap, BarChart3, Clock, Activity, AlertTriangle, CheckCircle, XCircle, Loader2, Download, Archive, Lock, ChevronDown } from 'lucide-react'
+import { ArrowLeft, Github, ExternalLink, Star, GitFork, Eye, Calendar, Users, FileText, Code, Shield, Zap, BarChart3, Clock, Activity, AlertTriangle, CheckCircle, XCircle, Loader2, Download, Archive, Lock, ChevronDown, AlertCircle } from 'lucide-react'
 import Link from 'next/link'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts'
 import ReactMarkdown from 'react-markdown'
@@ -62,6 +62,13 @@ interface AnalysisData {
     severity?: 'low' | 'medium' | 'high' | 'critical'
     title?: string
     description?: string
+  }>
+  techStack?: Array<{
+    name: string
+    type: string
+    confidence: string
+    icon?: string
+    version?: string
   }>
 }
 
@@ -601,32 +608,131 @@ export default function AnalyzePage() {
           </div>
         </div>
 
+        {/* Tech Stack */}
+        {analysisData.techStack && analysisData.techStack.length > 0 && (
+          <div className="bg-white/5 backdrop-blur-sm border border-gray-700 rounded-xl p-6 mb-8">
+            <div className="flex items-center mb-6">
+              <Zap className="h-6 w-6 text-orange-400 mr-2" />
+              <h3 className="text-xl font-semibold text-white">Technology Stack</h3>
+              <span className="ml-3 text-sm text-gray-400">
+                {analysisData.techStack.length} technologies detected
+              </span>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {analysisData.techStack.map((tech, index) => (
+                <div
+                  key={index}
+                  className="flex items-center space-x-3 bg-gray-800/50 hover:bg-gray-800/70 transition-colors p-3 rounded-lg border border-gray-600"
+                >
+                  <div className="text-2xl flex-shrink-0">
+                    {tech.icon || '🔧'}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center space-x-2">
+                      <h4 className="font-medium text-white truncate">{tech.name}</h4>
+                      {/* {tech.confidence === 'high' && (
+                        <CheckCircle className="h-3 w-3 text-green-400 flex-shrink-0" />
+                      )}
+                      {tech.confidence === 'medium' && (
+                        <AlertCircle className="h-3 w-3 text-yellow-400 flex-shrink-0" />
+                      )} */}
+                    </div>
+                    <p className="text-xs text-gray-400 truncate">{tech.type}</p>
+                    {/* {tech.version && (
+                      <p className="text-xs text-purple-300 truncate">{tech.version}</p>
+                    )} */}
+                  </div>
+                </div>
+              ))}
+            </div>
+            
+            {/* Tech Stack Summary */}
+            <div className="mt-6 pt-4 border-t border-gray-600">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                <div>
+                  <div className="text-lg font-bold text-white">
+                    {analysisData.techStack.filter(t => t.type.includes('Language')).length}
+                  </div>
+                  <div className="text-xs text-gray-400">Languages</div>
+                </div>
+                <div>
+                  <div className="text-lg font-bold text-white">
+                    {analysisData.techStack.filter(t => t.type.includes('Framework')).length}
+                  </div>
+                  <div className="text-xs text-gray-400">Frameworks</div>
+                </div>
+                <div>
+                  <div className="text-lg font-bold text-white">
+                    {analysisData.techStack.filter(t => t.type.includes('Database') || t.type.includes('ORM')).length}
+                  </div>
+                  <div className="text-xs text-gray-400">Database</div>
+                </div>
+                <div>
+                  <div className="text-lg font-bold text-white">
+                    {analysisData.techStack.filter(t => t.type.includes('Tool') || t.type.includes('Build')).length}
+                  </div>
+                  <div className="text-xs text-gray-400">Tools</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Charts Section */}
         <div className="grid lg:grid-cols-2 gap-8 mb-8">
           {/* Language Distribution */}
           <div className="bg-white/5 backdrop-blur-sm border border-gray-700 rounded-xl p-6">
-            <h3 className="text-xl font-semibold text-white mb-4">Language Distribution</h3>
-            <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={analysisData.fileTypes || []}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                    outerRadius={80}
-                    fill="#8884d8"
-                    dataKey="lines"
-                  >
-                    {(analysisData.fileTypes || []).map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                </PieChart>
-              </ResponsiveContainer>
+            <h3 className="text-xl font-semibold text-white mb-6">Language Distribution</h3>
+            
+            {/* Languages List - 2 Column Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {(analysisData.fileTypes || []).map((entry, index) => {
+                const totalLines = analysisData.fileTypes?.reduce((sum, item) => sum + item.lines, 0) || 1;
+                const rawPercentage = (entry.lines / totalLines) * 100;
+                
+                // Smart decimal formatting based on percentage size
+                let percentage;
+                if (rawPercentage < 0.01) {
+                  percentage = rawPercentage.toFixed(3); // Very small: 0.001%
+                } else {
+                  percentage = rawPercentage.toFixed(2); 
+                }
+                
+                return (
+                  <div key={`lang-${index}`} className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <div 
+                          className="w-4 h-4 rounded-full flex-shrink-0"
+                          style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                        ></div>
+                        <span className="text-white font-medium truncate">{entry.name}</span>
+                      </div>
+                      <div className="text-right flex-shrink-0 ml-2">
+                        <span className="text-white font-semibold">{percentage}%</span>
+                        <div className="text-xs text-gray-400">
+                          {entry.lines.toLocaleString()} lines
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Progress Bar */}
+                    <div className="w-full bg-gray-700 rounded-full h-2">
+                      <div 
+                        className="h-2 rounded-full transition-all duration-300"
+                        style={{ 
+                          backgroundColor: COLORS[index % COLORS.length],
+                          width: `${percentage}%`
+                        }}
+                      ></div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
+            
+          
           </div>
 
           {/* Commit Activity */}
@@ -676,7 +782,7 @@ export default function AnalyzePage() {
                       <ExternalLink className="h-3 w-3 opacity-70 group-hover:opacity-100 transition-opacity" />
                     </a>
                   </div>
-                  <span className="text-gray-300">{contributor.contributions || 0} commits</span>
+                  <span className="text-gray-300">{contributor.contributions?.toLocaleString() || 0} commits</span>
                 </div>
               ))}
             </div>

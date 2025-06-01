@@ -56,12 +56,6 @@ The chat feature uses your existing `llama-api-client` package and `LLAMA_API_KE
 LLAMA_API_KEY="your-llama-api-key"
 ```
 
-The application uses the existing `/api/llama-proxy` endpoint which:
-- Securely handles your LLAMA_API_KEY on the server side
-- Uses the `llama-api-client` package for API communication
-- Provides fallback responses if the API is unavailable
-- Supports multiple Llama model variants with automatic fallback
-
 ### Chat Features
 
 - **Repository-aware conversations**: AI knows about the specific repository being analyzed
@@ -145,7 +139,7 @@ npm run dev
 - **AI Analysis**: Llama API
 - **Visualization**: Recharts
 - **Styling**: Tailwind CSS
-- **Database**: Prisma (for caching analysis results)
+- **Database**: AWS RDS Postgres with Prisma ORM
 
 ## Privacy & Security
 

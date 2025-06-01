@@ -122,6 +122,7 @@ npm run dev
 3. **Analysis**: Watch as the system analyzes the repository in real-time
 4. **Review Results**: Explore comprehensive analysis results with interactive charts
 5. **AI Insights**: Get detailed AI-powered recommendations and insights
+6. **AI Chat**: Have interactive conversations with AI about the repository analysis
 
 ## Supported Repository Types
 
@@ -145,9 +146,8 @@ npm run dev
 
 - Repository data is analyzed securely and not stored permanently
 - Authentication tokens are handled securely
-- Analysis results can be cached locally for faster subsequent access
 - No repository code is shared with third parties
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the MIT License.

@@ -14,7 +14,7 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: light) {
+@media (prefers-color-scheme: dark) {
   :root {
     --background: #0a0a0a;
     --foreground: #ededed;
@@ -41,34 +41,13 @@ input[type="tel"],
 input[type="url"],
 textarea,
 select {
-  color: #1f2937 !important; /* gray-800 - much darker text */
+  color: #f2f6fb !important;
   font-weight: 500 !important; /* slightly bolder for better readability */
 }
 
 /* Much darker placeholder text */
 ::placeholder {
-  color: #4b5563 !important; /* gray-600 - darker than before */
-  opacity: 1 !important;
-  font-weight: 400 !important;
-}
-
-/* Firefox specific placeholder styling */
-::-moz-placeholder {
-  color: #4b5563 !important; /* gray-600 */
-  opacity: 1 !important;
-  font-weight: 400 !important;
-}
-
-/* WebKit browsers (Chrome, Safari, Edge) */
-::-webkit-input-placeholder {
-  color: #4b5563 !important; /* gray-600 */
-  opacity: 1 !important;
-  font-weight: 400 !important;
-}
-
-/* Microsoft Edge */
-::-ms-input-placeholder {
-  color: #4b5563 !important; /* gray-600 */
+  color: #8897ab !important; /* gray-600 - darker than before */
   opacity: 1 !important;
   font-weight: 400 !important;
 }

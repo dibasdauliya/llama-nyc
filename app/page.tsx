@@ -1,327 +1,229 @@
 "use client";
 
 import { useState } from "react";
-import { MessageSquare, Briefcase, GraduationCap, ArrowRight, Sparkles, Video, Users, Bot, LogIn, UserPlus } from "lucide-react";
+import { Search, Github, Lock, Globe, Loader2, BarChart3, GitBranch, Users, FileText, Shield, Zap } from "lucide-react";
 import Link from "next/link";
-import { useSession } from "next-auth/react";
 
-export default function Home() {
-  const [hoveredCard, setHoveredCard] = useState<string | null>(null);
-  const { data: session } = useSession();
+export default function HomePage() {
+  const [repoUrl, setRepoUrl] = useState('')
+  const [isAnalyzing, setIsAnalyzing] = useState(false)
+  const [urlError, setUrlError] = useState('')
+
+  const validateGitHubUrl = (url: string): boolean => {
+    const githubUrlPattern = /^https:\/\/github\.com\/[\w.-]+\/[\w.-]+\/?$/
+    return githubUrlPattern.test(url)
+  }
+
+  const handleAnalyze = async () => {
+    setUrlError('')
+    
+    if (!repoUrl.trim()) {
+      setUrlError('Please enter a GitHub repository URL')
+      return
+    }
+
+    if (!validateGitHubUrl(repoUrl)) {
+      setUrlError('Please enter a valid GitHub repository URL (e.g., https://github.com/owner/repo)')
+      return
+    }
+
+    setIsAnalyzing(true)
+    
+    // Extract owner and repo from URL
+    const urlParts = repoUrl.replace('https://github.com/', '').split('/')
+    const owner = urlParts[0]
+    const repo = urlParts[1]
+    
+    // Navigate to analysis page
+    window.location.href = `/analyze/${owner}/${repo}`
+  }
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleAnalyze()
+    }
+  }
+
+  const exampleRepos = [
+    'https://github.com/microsoft/vscode',
+    'https://github.com/facebook/react',
+    'https://github.com/vercel/next.js',
+    'https://github.com/nodejs/node'
+  ]
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
       {/* Header */}
-      <header className="w-full py-6 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <div className="p-2 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg">
-              <Video className="h-8 w-8 text-white" />
+      <nav className="border-b border-gray-800 bg-black/20 backdrop-blur-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between h-16">
+            <div className="flex items-center">
+              <Github className="h-8 w-8 text-white mr-3" />
+              <span className="text-xl font-bold text-white">GitHub Analyzer</span>
             </div>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">AI Video Interviewer</h1>
-              <p className="text-sm text-gray-600">Powered by Tavus AI</p>
-            </div>
-          </div>
-          
-          {/* Auth Buttons */}
-          <div className="flex items-center space-x-4">
-            {session ? (
-              <Link 
-                href="/dashboard" 
-                className="px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200 font-medium"
-              >
-                Go to Dashboard
+            <div className="flex items-center space-x-4">
+              <Link href="/auth/signin" className="text-gray-300 hover:text-white transition-colors">
+                Sign In
               </Link>
-            ) : (
-              <>
-                <Link 
-                  href="/auth/signin" 
-                  className="flex items-center space-x-2 px-4 py-2 text-gray-700 hover:text-gray-900 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  <LogIn className="h-4 w-4" />
-                  <span>Sign In</span>
-                </Link>
-                <Link 
-                  href="/auth/signup" 
-                  className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200 font-medium"
-                >
-                  <UserPlus className="h-4 w-4" />
-                  <span>Get Started</span>
-                </Link>
-              </>
-            )}
+            </div>
           </div>
         </div>
-      </header>
+      </nav>
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        {/* Hero Section */}
+      {/* Hero Section */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="text-center mb-16">
-          <h2 className="text-5xl font-bold text-gray-900 mb-6">
-            Master Your Interview Skills with AI
-          </h2>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed mb-8">
-            Experience realistic video interviews with AI avatars that look and sound like real interviewers. 
-            Get personalized feedback and build confidence for your actual interviews.
+          <h1 className="text-5xl md:text-6xl font-bold text-white mb-6">
+            Analyze Any
+            <span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent"> GitHub </span>
+            Repository
+          </h1>
+          <p className="text-xl text-gray-300 mb-8 max-w-3xl mx-auto">
+            Get comprehensive insights, code metrics, security analysis, and AI-powered recommendations for any GitHub repository - public or private.
           </p>
-          
-          {/* New video preview placeholder */}
+
+          {/* URL Input */}
           <div className="max-w-2xl mx-auto mb-8">
-            <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-8 text-white">
-              <div className="flex items-center justify-center space-x-4 mb-4">
-                <Video className="h-8 w-8" />
-                <span className="text-lg font-semibold">AI Video Interview Preview</span>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <Search className="h-5 w-5 text-gray-400" />
               </div>
-              <p className="text-blue-100">
-                Watch our AI interviewer conduct realistic interviews with natural conversation, 
-                facial expressions, and adaptive questioning based on your responses.
-              </p>
+              <input
+                type="text"
+                value={repoUrl}
+                onChange={(e) => setRepoUrl(e.target.value)}
+                onKeyPress={handleKeyPress}
+                placeholder="https://github.com/owner/repository"
+                className="block w-full pl-10 pr-3 py-4 border border-gray-600 rounded-lg bg-gray-200/50 text-white placeholder-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-lg"
+              />
+            </div>
+            {urlError && (
+              <p className="text-red-400 text-sm mt-2 text-left">{urlError}</p>
+            )}
+            
+            <button
+              onClick={handleAnalyze}
+              disabled={isAnalyzing}
+              className="w-full mt-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white py-4 px-8 rounded-lg font-medium hover:from-purple-700 hover:to-pink-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center text-lg"
+            >
+              {isAnalyzing ? (
+                <>
+                  <Loader2 className="animate-spin h-5 w-5 mr-2" />
+                  Analyzing...
+                </>
+              ) : (
+                <>
+                  <BarChart3 className="h-5 w-5 mr-2" />
+                  Analyze Repository
+                </>
+              )}
+            </button>
+          </div>
+
+          {/* Example URLs */}
+          <div className="mb-12">
+            <p className="text-gray-400 mb-4">Try these popular repositories:</p>
+            <div className="flex flex-wrap justify-center gap-2">
+              {exampleRepos.map((url) => (
+                <button
+                  key={url}
+                  onClick={() => setRepoUrl(url)}
+                  className="text-sm bg-gray-800/50 text-gray-300 px-3 py-1 rounded-full hover:bg-gray-700/50 transition-colors"
+                >
+                  {url.replace('https://github.com/', '')}
+                </button>
+              ))}
             </div>
           </div>
         </div>
 
-        {/* Interview Options */}
-        <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-  {/* VISA Interview Card */}
-  <Link href="/visa-interview">
-    <div
-      className={`group relative p-8 rounded-2xl cursor-pointer overflow-hidden transform transition-all duration-200 ease-out ${
-        hoveredCard === "visa" 
-          ? "scale-[1.02] shadow-2xl shadow-blue-500/15 -translate-y-1" 
-          : "shadow-lg hover:shadow-xl scale-100 translate-y-0"
-      }`}
-      style={{
-        background: "linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%)"
-      }}
-      onMouseEnter={() => setHoveredCard("visa")}
-      onMouseLeave={() => setHoveredCard(null)}
-    >
-      <div className="relative z-10">
-        <div className={`inline-flex p-3 rounded-xl mb-6 transform transition-all duration-150 ease-out ${
-          hoveredCard === "visa" 
-            ? "bg-blue-200/60 scale-110 rotate-3" 
-            : "bg-blue-100 scale-100 rotate-0"
-        }`}>
-          <GraduationCap className={`h-8 w-8 transition-all duration-150 ease-out ${
-            hoveredCard === "visa" ? "text-blue-700 scale-110" : "text-blue-600 scale-100"
-          }`} />
-        </div>
-
-        <h3 className={`text-2xl font-bold mb-4 transition-all duration-150 ease-out ${
-          hoveredCard === "visa" ? "text-blue-900 translate-x-1" : "text-gray-900 translate-x-0"
-        }`}>
-          US VISA Interview
-        </h3>
-
-        <p className={`text-lg mb-6 transition-all duration-150 ease-out ${
-          hoveredCard === "visa" ? "text-blue-700" : "text-gray-600"
-        }`}>
-          Practice with an AI VISA officer avatar. Experience authentic embassy interview 
-          scenarios with realistic questions and professional demeanor.
-        </p>
-
-        <ul className={`space-y-2 mb-8 transition-all duration-150 ease-out ${
-          hoveredCard === "visa" ? "text-blue-700" : "text-gray-600"
-        }`}>
-          {["Student, Tourist & Work VISAs", "AI avatar with professional demeanor", "Real-time video conversation"].map((text, i) => (
-            <li key={i} className={`flex items-center space-x-2 transform transition-transform duration-200 delay-[${i * 50}ms] group-hover:translate-x-1`}>
-              <div className={`w-1.5 h-1.5 rounded-full transition-all duration-150 ease-out ${
-                hoveredCard === "visa" ? "bg-blue-700 scale-125" : "bg-blue-600 scale-100"
-              }`}></div>
-              <span className="transition-colors duration-150 ease-out">{text}</span>
-            </li>
-          ))}
-        </ul>
-
-        <div className={`flex items-center space-x-2 font-semibold transition-all duration-150 ease-out transform ${
-          hoveredCard === "visa" ? "text-blue-800 translate-x-2" : "text-blue-600 translate-x-0"
-        }`}>
-          <Video className="h-5 w-5 transition-transform duration-200 ease-out" />
-          <span>Start AI Video Interview</span>
-          <ArrowRight className={`h-5 w-5 transition-all duration-200 ease-out ${
-            hoveredCard === "visa" ? "translate-x-2 scale-110" : "translate-x-0 scale-100"
-          }`} />
-        </div>
-      </div>
-
-      {/* Background Pattern */}
-      <div className={`absolute inset-0 opacity-10 transition-all duration-300 ease-out ${
-        hoveredCard === "visa" ? "scale-110 rotate-1" : "scale-100 rotate-0"
-      }`}>
-        <div className="absolute top-4 right-4 w-24 h-24 border border-blue-600 rounded-full transition-transform duration-500 ease-out group-hover:rotate-12"></div>
-        <div className="absolute bottom-4 left-4 w-16 h-16 border border-blue-600 rounded-full transition-transform duration-700 ease-out group-hover:-rotate-12"></div>
-      </div>
-
-      {/* Subtle Hover Overlay */}
-      <div className={`absolute inset-0 rounded-2xl transition-opacity duration-200 ease-out ${
-        hoveredCard === "visa" 
-          ? "opacity-100 bg-gradient-to-br from-blue-600/8 to-indigo-600/12" 
-          : "opacity-0"
-      }`}></div>
-    </div>
-  </Link>
-
-  {/* Job Interview Card */}
-    <Link href="/job-interview">
-      <div
-        className={`group relative p-8 rounded-2xl cursor-pointer overflow-hidden transform transition-all duration-200 ease-out ${
-          hoveredCard === "job" 
-            ? "scale-[1.02] shadow-2xl shadow-purple-500/15 -translate-y-1" 
-            : "shadow-lg hover:shadow-xl scale-100 translate-y-0"
-        }`}
-        style={{
-          background: "linear-gradient(135deg, #FAF5FF 0%, #F3E8FF 100%)"
-        }}
-        onMouseEnter={() => setHoveredCard("job")}
-        onMouseLeave={() => setHoveredCard(null)}
-      >
-        <div className="relative z-10">
-          <div className={`inline-flex p-3 rounded-xl mb-6 transform transition-all duration-150 ease-out ${
-            hoveredCard === "job" 
-              ? "bg-purple-200/60 scale-110 -rotate-3" 
-              : "bg-purple-100 scale-100 rotate-0"
-          }`}>
-            <Briefcase className={`h-8 w-8 transition-all duration-150 ease-out ${
-              hoveredCard === "job" ? "text-purple-700 scale-110" : "text-purple-600 scale-100"
-            }`} />
-          </div>
-
-          <h3 className={`text-2xl font-bold mb-4 transition-all duration-150 ease-out ${
-            hoveredCard === "job" ? "text-purple-900 translate-x-1" : "text-gray-900 translate-x-0"
-          }`}>
-            Job Interview
-          </h3>
-
-          <p className={`text-lg mb-6 transition-all duration-150 ease-out ${
-            hoveredCard === "job" ? "text-purple-700" : "text-gray-600"
-          }`}>
-            Interview with an AI HR professional or technical interviewer. 
-            Tailored questions based on your role, industry, and uploaded resume.
-          </p>
-
-          <ul className={`space-y-2 mb-8 transition-all duration-150 ease-out ${
-            hoveredCard === "job" ? "text-purple-700" : "text-gray-600"
-          }`}>
-            {["HR & Technical interview modes", "Resume analysis & personalization", "Industry-specific AI interviewer"].map((text, i) => (
-              <li key={i} className={`flex items-center space-x-2 transform transition-transform duration-200 delay-[${i * 50}ms] group-hover:translate-x-1`}>
-                <div className={`w-1.5 h-1.5 rounded-full transition-all duration-150 ease-out ${
-                  hoveredCard === "job" ? "bg-purple-700 scale-125" : "bg-purple-600 scale-100"
-                }`}></div>
-                <span className="transition-colors duration-150 ease-out">{text}</span>
-              </li>
-            ))}
-          </ul>
-
-          <div className={`flex items-center space-x-2 font-semibold transition-all duration-150 ease-out transform ${
-            hoveredCard === "job" ? "text-purple-800 translate-x-2" : "text-purple-600 translate-x-0"
-          }`}>
-            <Video className="h-5 w-5 transition-transform duration-200 ease-out" />
-            <span>Start AI Video Interview</span>
-            <ArrowRight className={`h-5 w-5 transition-all duration-200 ease-out ${
-              hoveredCard === "job" ? "translate-x-2 scale-110" : "translate-x-0 scale-100"
-            }`} />
-          </div>
-        </div>
-
-        {/* Background Pattern */}
-        <div className={`absolute inset-0 opacity-10 transition-all duration-300 ease-out ${
-          hoveredCard === "job" ? "scale-110 -rotate-1" : "scale-100 rotate-0"
-        }`}>
-          <div className="absolute top-4 right-4 w-24 h-24 border border-purple-600 rounded-full transition-transform duration-500 ease-out group-hover:-rotate-12"></div>
-          <div className="absolute bottom-4 left-4 w-16 h-16 border border-purple-600 rounded-full transition-transform duration-700 ease-out group-hover:rotate-12"></div>
-        </div>
-
-        {/* Subtle Hover Overlay */}
-        <div className={`absolute inset-0 rounded-2xl transition-opacity duration-200 ease-out ${
-          hoveredCard === "job" 
-            ? "opacity-100 bg-gradient-to-br from-purple-600/8 to-violet-600/12" 
-            : "opacity-0"
-        }`}></div>
-      </div>
-    </Link>
-</div>
-
-
-        {/* Features Section */}
-        <div className="mt-24 text-center">
-          <h3 className="text-3xl font-bold text-gray-900 mb-8">Why Choose AI Video Interviewer?</h3>
-          <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-            <div className="p-6">
-              <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-lg mx-auto mb-4 flex items-center justify-center">
-                <Video className="h-6 w-6 text-white" />
-              </div>
-              <h4 className="text-xl font-semibold text-gray-900 mb-2">Realistic AI Avatars</h4>
-              <p className="text-gray-600">Experience face-to-face interviews with lifelike AI avatars that respond naturally and adapt to your answers.</p>
+        {/* Features Grid */}
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
+          <div className="bg-white/5 backdrop-blur-sm border border-gray-700 rounded-xl p-6 hover:border-purple-500/50 transition-colors">
+            <div className="flex items-center mb-4">
+              <Globe className="h-8 w-8 text-green-400 mr-3" />
+              <h3 className="text-xl font-semibold text-white">Public Repositories</h3>
             </div>
-            <div className="p-6">
-              <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg mx-auto mb-4 flex items-center justify-center">
-                <Users className="h-6 w-6 text-white" />
-              </div>
-              <h4 className="text-xl font-semibold text-gray-900 mb-2">Adaptive Conversations</h4>
-              <p className="text-gray-600">AI interviewers adjust their questions and follow-ups based on your responses for authentic interview flow.</p>
-            </div>
-            <div className="p-6">
-              <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-emerald-500 rounded-lg mx-auto mb-4 flex items-center justify-center">
-                <Sparkles className="h-6 w-6 text-white" />
-              </div>
-              <h4 className="text-xl font-semibold text-gray-900 mb-2">Instant Analysis</h4>
-              <p className="text-gray-600">Get real-time feedback on your performance, communication skills, and areas for improvement.</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Technology Section */}
-        <div className="mt-24 bg-gradient-to-r from-gray-900 to-gray-800 rounded-3xl p-12 text-white">
-          <div className="text-center mb-8">
-            <h3 className="text-3xl font-bold mb-4">Powered by Tavus AI Technology</h3>
-            <p className="text-gray-300 text-lg max-w-3xl mx-auto">
-              Our AI video interviews use cutting-edge avatar technology to create the most realistic 
-              interview practice experience available. Each AI interviewer is designed with professional 
-              expertise and industry knowledge.
+            <p className="text-gray-300">
+              Instantly analyze any public GitHub repository without authentication. Get comprehensive insights in seconds.
             </p>
           </div>
-          
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-blue-600 rounded-full mx-auto mb-4 flex items-center justify-center">
-                <Bot className="h-8 w-8 text-white" />
-              </div>
-              <h4 className="font-semibold mb-2">Natural AI Avatars</h4>
-              <p className="text-gray-400 text-sm">Lifelike appearance and behavior</p>
+
+          <div className="bg-white/5 backdrop-blur-sm border border-gray-700 rounded-xl p-6 hover:border-purple-500/50 transition-colors">
+            <div className="flex items-center mb-4">
+              <Lock className="h-8 w-8 text-yellow-400 mr-3" />
+              <h3 className="text-xl font-semibold text-white">Private Access</h3>
             </div>
-            <div className="text-center">
-              <div className="w-16 h-16 bg-purple-600 rounded-full mx-auto mb-4 flex items-center justify-center">
-                <MessageSquare className="h-8 w-8 text-white" />
-              </div>
-              <h4 className="font-semibold mb-2">Real-time Conversation</h4>
-              <p className="text-gray-400 text-sm">Instant responses and interactions</p>
+            <p className="text-gray-300">
+              Authenticate with GitHub to analyze private repositories. Secure OAuth integration with proper permissions.
+            </p>
+          </div>
+
+          <div className="bg-white/5 backdrop-blur-sm border border-gray-700 rounded-xl p-6 hover:border-purple-500/50 transition-colors">
+            <div className="flex items-center mb-4">
+              <BarChart3 className="h-8 w-8 text-blue-400 mr-3" />
+              <h3 className="text-xl font-semibold text-white">Code Metrics</h3>
             </div>
-            <div className="text-center">
-              <div className="w-16 h-16 bg-green-600 rounded-full mx-auto mb-4 flex items-center justify-center">
-                <Users className="h-8 w-8 text-white" />
-              </div>
-              <h4 className="font-semibold mb-2">Contextual Intelligence</h4>
-              <p className="text-gray-400 text-sm">Understands your background and role</p>
+            <p className="text-gray-300">
+              Detailed analysis of code complexity, language distribution, file structure, and quality metrics.
+            </p>
+          </div>
+
+          <div className="bg-white/5 backdrop-blur-sm border border-gray-700 rounded-xl p-6 hover:border-purple-500/50 transition-colors">
+            <div className="flex items-center mb-4">
+              <GitBranch className="h-8 w-8 text-purple-400 mr-3" />
+              <h3 className="text-xl font-semibold text-white">Git History</h3>
             </div>
-            <div className="text-center">
-              <div className="w-16 h-16 bg-orange-600 rounded-full mx-auto mb-4 flex items-center justify-center">
-                <Sparkles className="h-8 w-8 text-white" />
-              </div>
-              <h4 className="font-semibold mb-2">Personalized Feedback</h4>
-              <p className="text-gray-400 text-sm">Detailed performance analysis</p>
+            <p className="text-gray-300">
+              Analyze commit patterns, branch structure, contributor activity, and development timeline insights.
+            </p>
+          </div>
+
+          <div className="bg-white/5 backdrop-blur-sm border border-gray-700 rounded-xl p-6 hover:border-purple-500/50 transition-colors">
+            <div className="flex items-center mb-4">
+              <Shield className="h-8 w-8 text-red-400 mr-3" />
+              <h3 className="text-xl font-semibold text-white">Security Analysis</h3>
             </div>
+            <p className="text-gray-300">
+              Identify potential security vulnerabilities, dependency issues, and best practice recommendations.
+            </p>
+          </div>
+
+          <div className="bg-white/5 backdrop-blur-sm border border-gray-700 rounded-xl p-6 hover:border-purple-500/50 transition-colors">
+            <div className="flex items-center mb-4">
+              <Zap className="h-8 w-8 text-orange-400 mr-3" />
+              <h3 className="text-xl font-semibold text-white">AI Insights</h3>
+            </div>
+            <p className="text-gray-300">
+              Get AI-powered recommendations for code quality, architecture patterns, and optimization opportunities.
+            </p>
           </div>
         </div>
-      </main>
 
-      {/* Footer */}
-      <footer className="border-t border-gray-200 py-8 px-4 sm:px-6 lg:px-8 mt-24">
-        <div className="max-w-7xl mx-auto text-center text-gray-600">
-          <p>&copy; 2024 AI Video Interviewer. Powered by Tavus AI & Next.js.</p>
+        {/* CTA Section */}
+        <div className="text-center bg-gradient-to-r from-purple-800/20 to-pink-800/20 border border-purple-500/30 rounded-2xl p-8">
+          <h2 className="text-3xl font-bold text-white mb-4">
+            Ready to dive deep into any codebase?
+          </h2>
+          <p className="text-gray-300 mb-6 text-lg">
+            Start analyzing repositories now and discover insights you never knew existed.
+          </p>
+          <div className="flex justify-center items-center gap-4 text-sm text-gray-400">
+            <span className="flex items-center">
+              <Users className="h-4 w-4 mr-1" />
+              50k+ repos analyzed
+            </span>
+            <span className="flex items-center">
+              <FileText className="h-4 w-4 mr-1" />
+              Detailed reports
+            </span>
+            <span className="flex items-center">
+              <Shield className="h-4 w-4 mr-1" />
+              Secure & private
+            </span>
+          </div>
         </div>
-      </footer>
+      </div>
     </div>
   );
 }

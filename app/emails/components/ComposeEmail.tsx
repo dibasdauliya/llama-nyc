@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { X, Minimize2, Maximize2 } from 'lucide-react';
+import { X, Minimize2, Maximize2, Loader2 } from 'lucide-react';
 import AiReplyGenerator from './AiReplyGenerator';
 
 interface ComposeEmailProps {
@@ -13,6 +13,8 @@ interface ComposeEmailProps {
   replySubject?: string;
   replyBody?: string;
   isReply?: boolean;
+  threadId?: string;
+  messageId?: string;
 }
 
 export default function ComposeEmail({
@@ -23,12 +25,17 @@ export default function ComposeEmail({
   replyTo = '',
   replySubject = '',
   replyBody = '',
-  isReply = false
+  isReply = false,
+  threadId = '',
+  messageId = ''
 }: ComposeEmailProps) {
   const [to, setTo] = useState(initialTo);
   const [subject, setSubject] = useState(isReply ? `Re: ${replySubject}` : initialSubject);
   const [body, setBody] = useState(initialBody);
   const [isMinimized, setIsMinimized] = useState(false);
+  const [isSending, setIsSending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
 
   useEffect(() => {
     if (isReply && replyBody) {
@@ -36,10 +43,54 @@ export default function ComposeEmail({
     }
   }, [isReply, replyTo, replySubject, replyBody]);
 
-  const handleSend = () => {
-    // Here you would implement the email sending logic
-    console.log('Sending email:', { to, subject, body });
-    onClose();
+  const handleSend = async () => {
+    if (isSending) return;
+    
+    if (!to.trim() || !subject.trim() || !body.trim()) {
+      setError('Please fill in all fields');
+      return;
+    }
+    
+    try {
+      setIsSending(true);
+      setError(null);
+      
+      // Convert plain text to HTML for better email formatting
+      const htmlBody = body.replace(/\n/g, '<br>');
+      
+      // Send the email through our API
+      const response = await fetch('/api/gmail/send', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          to,
+          subject,
+          body: htmlBody,
+          threadId: isReply ? threadId : undefined,
+          messageId: isReply ? messageId : undefined
+        }),
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to send email');
+      }
+      
+      // Show success message and close after delay
+      setSuccess(true);
+      setTimeout(() => {
+        onClose();
+      }, 1500);
+      
+    } catch (err) {
+      console.error('Error sending email:', err);
+      setError(err instanceof Error ? err.message : 'Failed to send email');
+    } finally {
+      setIsSending(false);
+    }
   };
 
   const handleInsertReply = (reply: string) => {
@@ -96,6 +147,7 @@ export default function ComposeEmail({
             value={to}
             onChange={(e) => setTo(e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+            disabled={isSending}
           />
         </div>
         
@@ -106,6 +158,7 @@ export default function ComposeEmail({
             value={subject}
             onChange={(e) => setSubject(e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+            disabled={isSending}
           />
         </div>
 
@@ -121,15 +174,34 @@ export default function ComposeEmail({
             value={body}
             onChange={(e) => setBody(e.target.value)}
             className="w-full h-64 px-3 py-2 border border-gray-300 rounded-md resize-none focus:outline-none focus:ring-1 focus:ring-blue-500"
+            disabled={isSending}
           />
         </div>
+        
+        {error && (
+          <div className="mb-4 p-2 bg-red-50 text-red-600 text-sm rounded-md">
+            {error}
+          </div>
+        )}
+        
+        {success && (
+          <div className="mb-4 p-2 bg-green-50 text-green-600 text-sm rounded-md">
+            Email sent successfully!
+          </div>
+        )}
         
         <div className="flex justify-between items-center">
           <button
             onClick={handleSend}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+            disabled={isSending}
           >
-            Send
+            {isSending ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Sending...
+              </>
+            ) : 'Send'}
           </button>
         </div>
       </div>

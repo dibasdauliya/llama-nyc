@@ -5,14 +5,15 @@ import { useState, useEffect, useCallback } from 'react';
 // Define Email interface
 export interface Email {
   id: string;
+  threadId: string;
   from: string;
   to: string;
   subject: string;
   snippet: string;
   body: string;
-  date: string;
-  read: boolean;
+  date: Date;
   starred: boolean;
+  unread: boolean;
 }
 
 interface UseGmailEmailsResult {

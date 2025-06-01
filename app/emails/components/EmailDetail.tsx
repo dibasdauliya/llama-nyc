@@ -117,6 +117,8 @@ ${getPlainText(email.body)}
           replySubject={email.subject}
           replyBody={getPlainText(email.body)}
           isReply={true}
+          threadId={email.threadId}
+          messageId={email.id}
         />
       )}
     </div>

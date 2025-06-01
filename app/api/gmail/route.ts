@@ -1,0 +1,190 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { google } from 'googleapis';
+
+// Mock data - same as in the hook for now
+// In a real app, this would be replaced with actual Gmail API calls
+const mockInbox = [
+  {
+    id: 'email1',
+    from: 'john.doe@example.com',
+    to: 'me@gmail.com',
+    subject: 'Weekly Team Meeting',
+    snippet: 'Hello team, this is a reminder about our weekly meeting tomorrow at 10 AM.',
+    body: '<p>Hello team,</p><p>This is a reminder about our weekly meeting tomorrow at 10 AM.</p><p>Please come prepared with your updates.</p><p>Best regards,<br>John</p>',
+    date: '2023-11-07T10:23:00Z',
+    read: true,
+    starred: true,
+  },
+  {
+    id: 'email2',
+    from: 'newsletter@medium.com',
+    to: 'me@gmail.com',
+    subject: 'Your Weekly Reading Digest',
+    snippet: 'Here are the top stories that we think you will enjoy based on your reading history.',
+    body: '<h2>Your Weekly Reading Digest</h2><p>Here are the top stories that we think you will enjoy based on your reading history:</p><ul><li>10 Tips for Better React Performance</li><li>The Future of AI in 2023</li><li>How to Stay Productive While Working Remotely</li></ul>',
+    date: '2023-11-06T08:15:00Z',
+    read: false,
+    starred: false,
+  },
+  {
+    id: 'email3',
+    from: 'support@github.com',
+    to: 'me@gmail.com',
+    subject: 'Security Alert: New Sign-in',
+    snippet: 'We noticed a new sign-in to your GitHub account from an unrecognized device.',
+    body: '<p>Hello,</p><p>We noticed a new sign-in to your GitHub account from an unrecognized device.</p><p><strong>Device:</strong> Windows PC<br><strong>Location:</strong> San Francisco, CA, USA<br><strong>Time:</strong> November 5, 2023, 3:45 PM</p><p>If this was you, you can ignore this email. If not, please secure your account immediately.</p>',
+    date: '2023-11-05T15:45:00Z',
+    read: true,
+    starred: true,
+  },
+  {
+    id: 'email4',
+    from: 'billing@stripe.com',
+    to: 'me@gmail.com',
+    subject: 'Your Monthly Invoice',
+    snippet: 'Your invoice for October 2023 is now available. Total amount: $15.00',
+    body: '<h2>Invoice for October 2023</h2><p>Your invoice for October 2023 is now available.</p><p><strong>Invoice Number:</strong> INV-12345<br><strong>Date:</strong> November 1, 2023<br><strong>Total Amount:</strong> $15.00</p><p>Thank you for your business!</p>',
+    date: '2023-11-01T09:30:00Z',
+    read: true,
+    starred: false,
+  },
+  {
+    id: 'email5',
+    from: 'recruiter@techjobs.com',
+    to: 'me@gmail.com',
+    subject: 'Regarding your job application',
+    snippet: 'Thank you for applying to the Senior Developer position at TechCorp.',
+    body: '<p>Dear Applicant,</p><p>Thank you for applying to the Senior Developer position at TechCorp.</p><p>We have reviewed your application and would like to schedule an interview with you. Please let me know your availability for next week.</p><p>Best regards,<br>Sarah Smith<br>Talent Acquisition</p>',
+    date: '2023-10-28T14:20:00Z',
+    read: false,
+    starred: true,
+  }
+];
+
+const mockSent = [
+  {
+    id: 'sent1',
+    from: 'me@gmail.com',
+    to: 'jane.smith@example.com',
+    subject: 'Project Proposal',
+    snippet: 'Hi Jane, I have attached the project proposal for your review.',
+    body: '<p>Hi Jane,</p><p>I have attached the project proposal for your review. Please let me know if you have any questions or suggestions.</p><p>Looking forward to your feedback.</p><p>Best regards,<br>Me</p>',
+    date: '2023-11-06T13:45:00Z',
+    read: true,
+    starred: false,
+  },
+  {
+    id: 'sent2',
+    from: 'me@gmail.com',
+    to: 'support@acmeservice.com',
+    subject: 'Account Issue',
+    snippet: 'Hello, I am experiencing an issue with my account. My login credentials are not working.',
+    body: '<p>Hello,</p><p>I am experiencing an issue with my account. My login credentials are not working since yesterday.</p><p>My account email is me@gmail.com. Can you please help resolve this?</p><p>Thank you,<br>Me</p>',
+    date: '2023-11-04T09:12:00Z',
+    read: true,
+    starred: false,
+  },
+  {
+    id: 'sent3',
+    from: 'me@gmail.com',
+    to: 'event@conference.com',
+    subject: 'RSVP: Developer Conference 2023',
+    snippet: 'I would like to confirm my attendance at the Developer Conference 2023.',
+    body: '<p>Hello,</p><p>I would like to confirm my attendance at the Developer Conference 2023 on December 10-12.</p><p>My details:<br>Name: John Doe<br>Email: me@gmail.com<br>Role: Senior Developer</p><p>Thank you,<br>John</p>',
+    date: '2023-10-30T16:30:00Z',
+    read: true,
+    starred: true,
+  }
+];
+
+export async function GET(request: NextRequest) {
+  const searchParams = request.nextUrl.searchParams;
+  const type = searchParams.get('type') || 'inbox';
+  
+  // This is a placeholder for real Gmail API integration
+  // In a real app, you would:
+  // 1. Get OAuth2 credentials
+  // 2. Create an OAuth2 client
+  // 3. Use the Gmail API to fetch real emails
+  
+  /*
+  // Example of what real Gmail API integration might look like:
+  const oauth2Client = new google.auth.OAuth2(
+    process.env.GMAIL_CLIENT_ID,
+    process.env.GMAIL_CLIENT_SECRET,
+    process.env.GMAIL_REDIRECT_URI
+  );
+  
+  oauth2Client.setCredentials({
+    refresh_token: process.env.GMAIL_REFRESH_TOKEN
+  });
+  
+  const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
+  
+  const response = await gmail.users.messages.list({
+    userId: 'me',
+    q: type === 'inbox' ? 'in:inbox' : 'in:sent'
+  });
+  
+  const messages = response.data.messages || [];
+  const emails = await Promise.all(
+    messages.map(async (message) => {
+      const msg = await gmail.users.messages.get({
+        userId: 'me',
+        id: message.id
+      });
+      
+      // Process the message data and format it properly
+      // ...
+      
+      return formattedEmail;
+    })
+  );
+  */
+  
+  // For now, return mock data
+  const emails = type === 'inbox' ? mockInbox : mockSent;
+  
+  return NextResponse.json(emails);
+}
+
+// POST handler for sending emails
+export async function POST(request: NextRequest) {
+  const data = await request.json();
+  
+  // In a real app, you would send the email using the Gmail API
+  /*
+  const oauth2Client = new google.auth.OAuth2(
+    process.env.GMAIL_CLIENT_ID,
+    process.env.GMAIL_CLIENT_SECRET,
+    process.env.GMAIL_REDIRECT_URI
+  );
+  
+  oauth2Client.setCredentials({
+    refresh_token: process.env.GMAIL_REFRESH_TOKEN
+  });
+  
+  const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
+  
+  // Create the email
+  const emailLines = [
+    `To: ${data.to}`,
+    `Subject: ${data.subject}`,
+    '',
+    data.body
+  ];
+  
+  const email = emailLines.join('\r\n').trim();
+  const encodedEmail = Buffer.from(email).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  
+  const response = await gmail.users.messages.send({
+    userId: 'me',
+    requestBody: {
+      raw: encodedEmail
+    }
+  });
+  */
+  
+  // For now, just return a success message
+  return NextResponse.json({ success: true, message: 'Email sent successfully' });
+} 
